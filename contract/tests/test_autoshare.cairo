@@ -133,3 +133,44 @@ fn test_get_group_as_admin_or_creator() {
     assert(group_admin.name == "TestGroup", 'Wrong group name');
     assert(group_creator.name == "TestGroup", 'Wrong group name');
 }
+
+
+// ================ Upgrade Function Tests ================
+
+// ================ Upgrade Function Tests ================
+
+#[test]
+fn test_upgradability() {
+    // first declaration of AutoShare contract
+    let contract = declare("AutoShare").unwrap().contract_class();
+    let constructor_calldata = array![ADMIN_ADDR().into()];
+
+    // deployment of the contract
+    let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
+
+    let instance = IAutoShareDispatcher { contract_address };
+    // declaring for a new class hash
+    let new_class_hash = declare("AutoShare").unwrap().contract_class().class_hash;
+    start_cheat_caller_address(contract_address, ADMIN_ADDR());
+    instance.upgrade(*new_class_hash);
+}
+
+
+#[test]
+#[should_panic]
+fn test_upgradability_should_fail_if_not_owner_tries_to_update() {
+    let contract = declare("AutoShare").unwrap().contract_class();
+    let constructor_calldata = array![ADMIN_ADDR().into()];
+
+    // deployment of the contract
+    let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
+
+    let instance = IAutoShareDispatcher { contract_address };
+    // declaring for a new class hash
+    let new_class_hash = declare("AutoShare").unwrap().contract_class().class_hash;
+
+    // change caller to another person
+    start_cheat_caller_address(contract_address, USER1_ADDR());
+    instance.upgrade(*new_class_hash);
+}
+

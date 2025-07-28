@@ -6,3 +6,5 @@ pub const ERR_TOO_FEW_MEMBERS: felt252 = '';
 pub const ERR_DUPLICATE_ADDRESS: felt252 = 'dublicate address';
 // Error for unauthorized access
 pub const ERR_UNAUTHORIZED: felt252 = '';
+// Error for zero address
+pub const ERROR_ZERO_ADDRESS: felt252 = 'Zero address forbidden';

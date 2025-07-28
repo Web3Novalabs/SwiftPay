@@ -2,25 +2,27 @@
 pub mod AutoShare {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArray;
+    use core::num::traits::Zero;
     use openzeppelin::token::erc20::interface::IERC20;
     use openzeppelin::upgrades::UpgradeableComponent;
     use starknet::storage::{
         Map, MutableVecTrait, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry,
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
     };
-    use starknet::{ClassHash, ContractAddress, get_caller_address};
+    use starknet::{ClassHash, ContractAddress, contract_address_const, get_caller_address};
     use crate::base::errors::{
-        ERR_DUPLICATE_ADDRESS, ERR_INVALID_PERCENTAGE_SUM, ERR_TOO_FEW_MEMBERS, ERR_UNAUTHORIZED,
+        ERROR_ZERO_ADDRESS, ERR_DUPLICATE_ADDRESS, ERR_INVALID_PERCENTAGE_SUM, ERR_TOO_FEW_MEMBERS,
+        ERR_UNAUTHORIZED,
     };
     use crate::base::events::GroupCreated;
     use crate::base::types::{Group, GroupMember};
     use crate::interfaces::iautoshare::IAutoShare;
 
     // components definition
-    // component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
     // Upgradeable
-    // impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
     #[storage]
     pub struct Storage {
@@ -43,6 +45,7 @@ pub mod AutoShare {
 
     #[constructor]
     pub fn constructor(ref self: ContractState, admin: ContractAddress) {
+        assert(admin != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
         self.admin.write(admin);
         self.group_count.write(0);
     }
@@ -89,6 +92,8 @@ pub mod AutoShare {
                 }
                 i += 1;
             }
+            let caller = get_caller_address();
+            assert(caller != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
 
             assert(sum == 100, 'cummulative share not 100%');
             let id = self.group_count.read() + 1;
@@ -119,7 +124,12 @@ pub mod AutoShare {
         }
 
 
-        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) { // Stub for upgradeability
+        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            self.assert_only_admin();
+
+            assert(new_class_hash.is_non_zero(), 'Class hash cannot be zero');
+
+            starknet::syscalls::replace_class_syscall(new_class_hash).unwrap();
         }
     }
 }
