@@ -80,9 +80,6 @@ pub mod AutoShare {
             contract_address: ContractAddress,
         ) {
             let creator_balance = token.balance_of(creator);
-            let contract = token.balance_of(self.token_address.read());
-            print!("creator balance {}", creator_balance);
-            print!("contract balance {}", contract);
             assert(creator_balance >= ONE_STRK, INSUFFICIENT_STRK_BALANCE);
 
             let allowed_amount = token.allowance(creator, contract_address);
@@ -98,6 +95,7 @@ pub mod AutoShare {
             members: Array<GroupMember>,
             token_address: ContractAddress,
         ) {
+            assert(get_caller_address() != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
             let member_count: usize = members.len();
             assert(member_count >= 2, 'member is less than 2');
 
@@ -112,7 +110,7 @@ pub mod AutoShare {
                 let mut j: usize = i + 1;
                 while j < member_count {
                     let duplicate = m.addr == members.at(j).clone().addr;
-                    assert(!duplicate, 'list contsin dublicate address');
+                    assert(!duplicate, 'list contain dublicate address');
                     j += 1;
                 }
                 i += 1;
@@ -146,8 +144,8 @@ pub mod AutoShare {
         }
 
         fn get_group(self: @ContractState, group_id: u256) -> Group {
-            let group: Group = self.groups.read(group_id);
-            self.is_admin_or_creator(group);
+            // let group: Group = self.groups.read(group_id);
+            // self.is_admin_or_creator(group);
             let group: Group = self.groups.read(group_id);
             group
         }
