@@ -43,7 +43,7 @@ pub fn TOKEN_ADDR() -> ContractAddress {
 // deploy the autoshare contract
 fn deploy_autoshare_contract() -> IAutoShareDispatcher {
     let contract = declare("AutoShare").unwrap().contract_class();
-    let constructor_calldata = array![ADMIN_ADDR().into()];
+    let constructor_calldata = array![ADMIN_ADDR().into(), TOKEN_ADDR().into()];
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
 
     let AutoShare = IAutoShareDispatcher { contract_address };
@@ -174,3 +174,12 @@ fn test_upgradability_should_fail_if_not_owner_tries_to_update() {
     instance.upgrade(*new_class_hash);
 }
 
+#[test]
+fn test_accept_payment_success() {
+    let token = TOKEN_ADDR();
+    let contract_address = deploy_autoshare_contract();
+    let mut members = ArrayTrait::new();
+    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+}

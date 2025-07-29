@@ -3,13 +3,16 @@ pub mod AutoShare {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArray;
     use core::num::traits::Zero;
-    use openzeppelin::token::erc20::interface::IERC20;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin::upgrades::UpgradeableComponent;
     use starknet::storage::{
         Map, MutableVecTrait, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry,
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
     };
-    use starknet::{ClassHash, ContractAddress, contract_address_const, get_caller_address};
+    use starknet::{
+        ClassHash, ContractAddress, contract_address_const, get_caller_address,
+        get_contract_address,
+    };
     use crate::base::errors::{
         ERROR_ZERO_ADDRESS, ERR_DUPLICATE_ADDRESS, ERR_INVALID_PERCENTAGE_SUM, ERR_TOO_FEW_MEMBERS,
         ERR_UNAUTHORIZED,
@@ -34,6 +37,7 @@ pub mod AutoShare {
         admin: ContractAddress,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
+        token_address: ContractAddress,
     }
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -44,10 +48,13 @@ pub mod AutoShare {
     }
 
     #[constructor]
-    pub fn constructor(ref self: ContractState, admin: ContractAddress) {
+    pub fn constructor(
+        ref self: ContractState, admin: ContractAddress, token_address: ContractAddress,
+    ) {
         assert(admin != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
         self.admin.write(admin);
         self.group_count.write(0);
+        self.token_address.write(token_address);
     }
 
     #[generate_trait]
@@ -98,7 +105,9 @@ pub mod AutoShare {
             assert(sum == 100, 'cummulative share not 100%');
             let id = self.group_count.read() + 1;
 
-            let group = Group { id, name: name.clone(), amount, creator: get_caller_address() };
+            let group = Group {
+                id, name: name.clone(), amount, is_paid: false, creator: get_caller_address(),
+            };
             self.groups.write(id, group);
 
             i = 0;
@@ -130,6 +139,38 @@ pub mod AutoShare {
             assert(new_class_hash.is_non_zero(), 'Class hash cannot be zero');
 
             starknet::syscalls::replace_class_syscall(new_class_hash).unwrap();
+        }
+
+        fn pay(ref self: ContractState, group_id: u256) {
+            let mut group = self.get_group(group_id);
+            let amount = group.amount;
+            self._process_payment(amount);
+            group.is_paid = true;
+            self.groups.write(group_id, group);
+        }
+    }
+
+    #[generate_trait]
+    impl internal of InternalTrait {
+        fn _process_payment(ref self: ContractState, amount: u256) {
+            let strk_token = IERC20Dispatcher { contract_address: self.token_address.read() };
+            let caller = get_caller_address();
+            let contract_address = get_contract_address();
+            self._check_token_allowance(caller, amount);
+            self._check_token_balance(caller, amount);
+            strk_token.transfer_from(caller, contract_address, amount);
+        }
+
+        fn _check_token_allowance(ref self: ContractState, spender: ContractAddress, amount: u256) {
+            let token = IERC20Dispatcher { contract_address: self.token_address.read() };
+            let allowance = token.allowance(spender, starknet::get_contract_address());
+            assert(allowance >= amount, 'insufficient allowance');
+        }
+
+        fn _check_token_balance(ref self: ContractState, caller: ContractAddress, amount: u256) {
+            let token = IERC20Dispatcher { contract_address: self.token_address.read() };
+            let balance = token.balance_of(caller);
+            assert(balance >= amount, 'insufficient balance');
         }
     }
 }

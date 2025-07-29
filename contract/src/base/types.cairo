@@ -12,5 +12,6 @@ pub struct Group {
     pub id: u256,
     pub name: ByteArray,
     pub amount: u256,
+    pub is_paid: bool,
     pub creator: ContractAddress,
 }

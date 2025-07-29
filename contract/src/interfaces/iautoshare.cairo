@@ -17,4 +17,6 @@ pub trait IAutoShare<TContractState> {
     /// @param new_class_hash The class hash of the new implementation.
     /// @dev Can only be called by admin when contract is not paused.
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
+
+    fn pay(ref self: TContractState, group_id: u256);
 }
