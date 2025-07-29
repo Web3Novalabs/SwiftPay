@@ -63,6 +63,9 @@ fn test_create_group_success() {
     let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
     start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
     erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
@@ -71,6 +74,9 @@ fn test_create_group_success() {
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
     contract_address.create_group("TestGroup", 1000, members, token);
     stop_cheat_caller_address(contract_address.contract_address);
+
+    let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_after == 1000000000000000000, 'balance not up to date');
 }
 
 #[test]
@@ -211,4 +217,73 @@ fn test_token_data() {
     assert(balance_of_user == 800_000_000_000_000_000_000_000_000_000_000, 'Wrong balance');
     let balance_of_user1 = erc20_dispatcher.balance_of(USER1_ADDR().into());
     assert(balance_of_user1 == 100_000_000_000_000_000_000_000_000_000_000, 'Wrong balance');
+}
+
+#[test]
+fn test_get_all_groups_and_get_groups_by_paid() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Approve and create 3 groups
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    // Group 1: is_paid = false (default)
+    let mut members1 = ArrayTrait::new();
+    members1.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members1.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.create_group("Group1", 1000, members1, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Group 2: is_paid = false (default)
+    let mut members2 = ArrayTrait::new();
+    members2.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
+    members2.append(GroupMember { addr: USER3_ADDR(), percentage: 50 });
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.create_group("Group2", 2000, members2, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Group 3: is_paid = false (default)
+    let mut members3 = ArrayTrait::new();
+    members3.append(GroupMember { addr: USER1_ADDR(), percentage: 10 });
+    members3.append(GroupMember { addr: USER3_ADDR(), percentage: 90 });
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.create_group("Group3", 3000, members3, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Test get_all_groups
+    let all_groups = contract_address.get_all_groups();
+    assert(all_groups.len() == 3_u32, 'Should return all 3 groups');
+    assert(all_groups.at(0).name == @"Group1", 'First group name mismatch');
+    assert(all_groups.at(1).name == @"Group2", 'Second group name mismatch');
+    assert(all_groups.at(2).name == @"Group3", 'Third group name mismatch');
+
+    // Test get_groups_by_paid(false) - should return all groups since all are unpaid
+    let unpaid_groups = contract_address.get_groups_by_paid(false);
+    assert(unpaid_groups.len() == 3_u32, 'Should return 3 unpaid groups');
+    assert(unpaid_groups.at(0).name == @"Group1", 'Unpaid group 1 name mismatch');
+    assert(unpaid_groups.at(1).name == @"Group2", 'Unpaid group 2 name mismatch');
+    assert(unpaid_groups.at(2).name == @"Group3", 'Unpaid group 3 name mismatch');
+
+    // Test get_groups_by_paid(true) - should return empty array since no groups are paid
+    let paid_groups = contract_address.get_groups_by_paid(true);
+    assert(paid_groups.len() == 0_u32, 'Should return zerro');
+}
+
+#[test]
+fn test_get_all_groups_empty() {
+    let (contract_address, _erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Test get_all_groups when no groups exist
+    let all_groups = contract_address.get_all_groups();
+    assert(all_groups.len() == 0_u32, 'Should be zero');
+
+    // Test get_groups_by_paid when no groups exist
+    let unpaid_groups = contract_address.get_groups_by_paid(false);
+    assert(unpaid_groups.len() == 0_u32, 'Should be zero');
+
+    let paid_groups = contract_address.get_groups_by_paid(true);
+    assert(paid_groups.len() == 0_u32, 'Should be zero ');
 }

@@ -144,10 +144,36 @@ pub mod AutoShare {
         }
 
         fn get_group(self: @ContractState, group_id: u256) -> Group {
-            // let group: Group = self.groups.read(group_id);
-            // self.is_admin_or_creator(group);
             let group: Group = self.groups.read(group_id);
             group
+        }
+
+        // Returns all groups
+        fn get_all_groups(self: @ContractState) -> Array<Group> {
+            let mut groups: Array<Group> = ArrayTrait::new();
+            let count = self.group_count.read();
+            let mut i: u256 = 1;
+            while i <= count {
+                let group = self.groups.read(i);
+                groups.append(group);
+                i = i + 1;
+            }
+            groups
+        }
+
+        // Returns all groups where is_paid matches the argument
+        fn get_groups_by_paid(self: @ContractState, is_paid: bool) -> Array<Group> {
+            let mut groups: Array<Group> = ArrayTrait::new();
+            let count = self.group_count.read();
+            let mut i: u256 = 1;
+            while i <= count {
+                let group = self.groups.read(i);
+                if group.is_paid == is_paid {
+                    groups.append(group);
+                }
+                i = i + 1;
+            }
+            groups
         }
 
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
