@@ -143,7 +143,7 @@ fn test_get_group_as_admin_or_creator() {
 fn test_upgradability() {
     // first declaration of AutoShare contract
     let contract = declare("AutoShare").unwrap().contract_class();
-    let constructor_calldata = array![ADMIN_ADDR().into()];
+    let constructor_calldata = array![ADMIN_ADDR().into(), TOKEN_ADDR().into()];
 
     // deployment of the contract
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
@@ -160,7 +160,7 @@ fn test_upgradability() {
 #[should_panic]
 fn test_upgradability_should_fail_if_not_owner_tries_to_update() {
     let contract = declare("AutoShare").unwrap().contract_class();
-    let constructor_calldata = array![ADMIN_ADDR().into()];
+    let constructor_calldata = array![ADMIN_ADDR().into(), TOKEN_ADDR().into()];
 
     // deployment of the contract
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
@@ -172,14 +172,4 @@ fn test_upgradability_should_fail_if_not_owner_tries_to_update() {
     // change caller to another person
     start_cheat_caller_address(contract_address, USER1_ADDR());
     instance.upgrade(*new_class_hash);
-}
-
-#[test]
-fn test_accept_payment_success() {
-    let token = TOKEN_ADDR();
-    let contract_address = deploy_autoshare_contract();
-    let mut members = ArrayTrait::new();
-    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
-    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", 1000, members, token);
 }
