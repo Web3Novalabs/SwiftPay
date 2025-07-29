@@ -141,11 +141,9 @@ pub mod AutoShare {
             starknet::syscalls::replace_class_syscall(new_class_hash).unwrap();
         }
 
-        fn pay(ref self: ContractState, group_id: u256) {// let mut group = self.get_group(group_id);
-        // let amount = group.amount;
-        // self._process_payment(amount);
-        // group.is_paid = true;
-        // self.groups.write(group_id, group);
+        fn pay(ref self: ContractState, group_id: u256) {
+            let group: Group = self.get_group(group_id);
+            // let mut array_of_members: GroupMember = ArrayTrait::new();
         }
     }
 
