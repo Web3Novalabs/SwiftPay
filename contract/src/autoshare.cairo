@@ -15,11 +15,12 @@ pub mod AutoShare {
     };
     use crate::base::errors::{
         ERROR_ZERO_ADDRESS, ERR_DUPLICATE_ADDRESS, ERR_INVALID_PERCENTAGE_SUM, ERR_TOO_FEW_MEMBERS,
-        ERR_UNAUTHORIZED,
+        ERR_UNAUTHORIZED, INSUFFICIENT_ALLOWANCE, INSUFFICIENT_STRK_BALANCE,
     };
     use crate::base::events::GroupCreated;
     use crate::base::types::{Group, GroupMember};
     use crate::interfaces::iautoshare::IAutoShare;
+    const ONE_STRK: u256 = 1_000_000_000_000_000_000;
 
     // components definition
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
@@ -70,6 +71,23 @@ pub mod AutoShare {
             let permission = caller == self.admin.read() || caller == group.creator;
             assert(permission, 'only owner or admin');
         }
+
+        // Asserts that creator meets group creation fee requirements
+        fn assert_group_creation_fee_requirements(
+            self: @ContractState,
+            token: IERC20Dispatcher,
+            creator: ContractAddress,
+            contract_address: ContractAddress,
+        ) {
+            let creator_balance = token.balance_of(creator);
+            let contract = token.balance_of(self.token_address.read());
+            print!("creator balance {}", creator_balance);
+            print!("contract balance {}", contract);
+            assert(creator_balance >= ONE_STRK, INSUFFICIENT_STRK_BALANCE);
+
+            let allowed_amount = token.allowance(creator, contract_address);
+            assert(allowed_amount >= ONE_STRK, INSUFFICIENT_ALLOWANCE);
+        }
     }
     #[abi(embed_v0)]
     impl autoshare of IAutoShare<ContractState> {
@@ -115,6 +133,8 @@ pub mod AutoShare {
                 self.group_members.entry(id).push(members.at(i).clone());
                 i += 1;
             }
+            // Collect pool creation fee (1 STRK)
+            self._collect_group_creation_fee(caller);
             self.group_count.write(id);
 
             self
@@ -132,7 +152,6 @@ pub mod AutoShare {
             group
         }
 
-
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.assert_only_admin();
 
@@ -141,7 +160,9 @@ pub mod AutoShare {
             starknet::syscalls::replace_class_syscall(new_class_hash).unwrap();
         }
 
-        fn pay(ref self: ContractState, group_id: u256) {// let mut group = self.get_group(group_id);
+        fn pay(
+            ref self: ContractState, group_id: u256,
+        ) { // let mut group = self.get_group(group_id);
         // let amount = group.amount;
         // self._process_payment(amount);
         // group.is_paid = true;
@@ -158,6 +179,18 @@ pub mod AutoShare {
             self._check_token_allowance(caller, amount);
             self._check_token_balance(caller, amount);
             strk_token.transfer_from(caller, contract_address, amount);
+        }
+        // Collects the group creation fee from the creator.
+        fn _collect_group_creation_fee(ref self: ContractState, creator: ContractAddress) {
+            // Retrieve the STRK token contract
+            let strk_token = IERC20Dispatcher { contract_address: self.token_address.read() };
+
+            // Check group creation fee requirements using SecurityTrait
+            let contract_address = get_contract_address();
+            self.assert_group_creation_fee_requirements(strk_token, creator, contract_address);
+
+            // Transfer the pool creation fee from creator to the contract
+            strk_token.transfer_from(creator, contract_address, ONE_STRK);
         }
 
         fn _check_token_allowance(ref self: ContractState, spender: ContractAddress, amount: u256) {

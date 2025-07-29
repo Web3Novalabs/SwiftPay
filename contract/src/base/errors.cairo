@@ -8,3 +8,7 @@ pub const ERR_DUPLICATE_ADDRESS: felt252 = 'dublicate address';
 pub const ERR_UNAUTHORIZED: felt252 = '';
 // Error for zero address
 pub const ERROR_ZERO_ADDRESS: felt252 = 'Zero address forbidden';
+// Error: The account has insufficient allowance.
+pub const INSUFFICIENT_ALLOWANCE: felt252 = 'Insufficient allowance';
+// Error: The account has insufficient STRK balance.
+pub const INSUFFICIENT_STRK_BALANCE: felt252 = 'Insufficient STRK balance';
