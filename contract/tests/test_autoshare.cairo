@@ -4,6 +4,7 @@ use contract::base::errors::{
 use contract::base::types::GroupMember;
 use contract::interfaces::iautoshare::{IAutoShareDispatcher, IAutoShareDispatcherTrait};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address,
     stop_cheat_caller_address,
@@ -43,36 +44,24 @@ pub fn TOKEN_ADDR() -> ContractAddress {
 
 // deploy the autoshare contract
 fn deploy_autoshare_contract() -> (IAutoShareDispatcher, IERC20Dispatcher) {
-    let contract = declare("AutoShare").unwrap().contract_class();
-
-    // Deploy mock ERC20
-    let erc20_class = declare("STARKTOKEN").unwrap().contract_class();
-    let mut calldata = array![USER3_ADDR().into(), ADMIN_ADDR().into(), 18];
+    let erc20_class = declare("strktoken").unwrap().contract_class();
+    let mut calldata = array![CREATOR_ADDR().into(), CREATOR_ADDR().into(), 6];
     let (erc20_address, _) = erc20_class.deploy(@calldata).unwrap();
+    let erc20_dispatcher = IERC20Dispatcher { contract_address: erc20_address };
+
+    let contract = declare("AutoShare").unwrap().contract_class();
     let constructor_calldata = array![ADMIN_ADDR().into(), erc20_address.into()];
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
 
     let AutoShare = IAutoShareDispatcher { contract_address };
-    let erc20 = IERC20Dispatcher {contract_address:erc20_address};
-    (AutoShare, erc20)
+    (AutoShare, erc20_dispatcher)
 }
 
 
 #[test]
 fn test_create_group_success() {
     let token = TOKEN_ADDR();
-    let (contract_address, erc20_address) = deploy_autoshare_contract();
-
-
-    // Setup token balances and allowances
-    start_cheat_caller_address(erc20_address.contract_address, USER3_ADDR());
-    erc20_address.transfer(CREATOR_ADDR(), 500000000000000000000000); // 500k tokens to CREATOR
-    stop_cheat_caller_address(erc20_address.contract_address);
-
-    start_cheat_caller_address(erc20_address.contract_address, CREATOR_ADDR());
-    erc20_address.approve(contract_address.contract_address, 1000000000000000000000000); // 1M approval
-    stop_cheat_caller_address(erc20_address.contract_address);
-
+    let (contract_address, _) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -131,24 +120,24 @@ fn test_get_group_unauthorized() {
 #[test]
 fn test_get_group_as_admin_or_creator() {
     let token = TOKEN_ADDR();
+    let (contract_address, _) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
-    let (contract, _) = deploy_autoshare_contract();
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    start_cheat_caller_address(contract.contract_address, CREATOR_ADDR());
-    contract.create_group("TestGroup", 1000, members, token);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.create_group("TestGroup", 1000, members, token);
     // Should succeed for creator
-    let group_creator = contract.get_group(1);
-    stop_cheat_caller_address(contract.contract_address);
+    let group_creator = contract_address.get_group(1);
+    stop_cheat_caller_address(contract_address.contract_address);
 
     let mut members = ArrayTrait::new();
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    start_cheat_caller_address(contract.contract_address, ADMIN_ADDR());
-    contract.create_group("TestGroup", 1000, members, token);
+    start_cheat_caller_address(contract_address.contract_address, ADMIN_ADDR());
+    contract_address.create_group("TestGroup", 1000, members, token);
     // Should succeed for admin and
-    let group_admin = contract.get_group(2);
-    stop_cheat_caller_address(contract.contract_address);
+    let group_admin = contract_address.get_group(2);
+    stop_cheat_caller_address(contract_address.contract_address);
     assert(group_admin.name == "TestGroup", 'Wrong group name');
     assert(group_creator.name == "TestGroup", 'Wrong group name');
 }
@@ -191,4 +180,21 @@ fn test_upgradability_should_fail_if_not_owner_tries_to_update() {
     // change caller to another person
     start_cheat_caller_address(contract_address, USER1_ADDR());
     instance.upgrade(*new_class_hash);
+}
+
+#[test]
+fn test_token_data() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let balance_of_user = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
+    assert(balance_of_user == 900_000_000_000_000_000_000_000_000_000_000, 'Wrong balance');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR().into());
+    println!("balance of user: {}", erc20_dispatcher.balance_of(CREATOR_ADDR().into()));
+    erc20_dispatcher.transfer(USER1_ADDR().into(), 100_000_000_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    let balance_of_user = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
+    assert(balance_of_user == 800_000_000_000_000_000_000_000_000_000_000, 'Wrong balance');
+    let balance_of_user1 = erc20_dispatcher.balance_of(USER1_ADDR().into());
+    assert(balance_of_user1 == 100_000_000_000_000_000_000_000_000_000_000, 'Wrong balance');
 }
