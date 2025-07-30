@@ -66,8 +66,9 @@ fn test_create_group_success() {
     let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
     assert(contract_balance_before == 0, 'balance not up to date');
 
-    start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -85,8 +86,9 @@ fn test_create_group_invalid_percentage() {
     let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
-    start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -101,8 +103,9 @@ fn test_create_group_too_few_members() {
     let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
-    start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -116,8 +119,9 @@ fn test_create_group_duplicate_address() {
     let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
-    start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -132,8 +136,9 @@ fn test_get_group_success() {
     let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let mut members = ArrayTrait::new();
-    start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -142,12 +147,13 @@ fn test_get_group_success() {
     stop_cheat_caller_address(contract_address.contract_address);
 
     let mut members = ArrayTrait::new();
-    start_cheat_caller_address(erc20_dispatcher.contract_address,CREATOR_ADDR());
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     erc20_dispatcher.transfer(ADMIN_ADDR(), 500000000000000000000000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
-    start_cheat_caller_address(erc20_dispatcher.contract_address,ADMIN_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, ADMIN_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
@@ -157,7 +163,7 @@ fn test_get_group_success() {
     // Should succeed for admin and
     let group1 = contract_address.get_group(1);
     stop_cheat_caller_address(contract_address.contract_address);
-    let group2= contract_address.get_group(2);
+    let group2 = contract_address.get_group(2);
     assert(group1.name == "TestGroup1", 'Wrong group name');
     assert(group2.name == "TestGroup2", 'Wrong group name');
 }
@@ -226,7 +232,8 @@ fn test_get_all_groups_and_get_groups_by_paid() {
 
     // Approve and create 3 groups
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
     // Group 1: is_paid = false (default)
@@ -286,4 +293,35 @@ fn test_get_all_groups_empty() {
 
     let paid_groups = contract_address.get_groups_by_paid(true);
     assert(paid_groups.len() == 0_u32, 'Should be zero ');
+}
+
+#[test]
+fn test_pay_logic() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let mut members = ArrayTrait::new();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    let mut user1_balance_before = erc20_dispatcher.balance_of(USER1_ADDR().into());
+    let mut user2_balance_before = erc20_dispatcher.balance_of(USER2_ADDR().into());
+    println!("creator balance before: {}", erc20_dispatcher.balance_of(CREATOR_ADDR().into()));
+    println!("user1 balance before: {}", user1_balance_before);
+    println!("user2 balance before: {}", user2_balance_before);
+    contract_address.pay(1);
+    let user1_balance_after = erc20_dispatcher.balance_of(USER1_ADDR().into());
+    let user2_balance_after = erc20_dispatcher.balance_of(USER2_ADDR().into());
+    println!("user1 balance after: {}", user1_balance_after);
+    println!("user2 balance after: {}", user2_balance_after);
+    // assert(user1_balance_after == user1_balance_before + 600, 'user1 balance not up to date');
+    // assert(user2_balance_after == user2_balance_before + 400, 'user2 balance not up to date');
+    stop_cheat_caller_address(contract_address.contract_address);
 }

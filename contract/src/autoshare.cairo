@@ -31,9 +31,7 @@ pub mod AutoShare {
     #[storage]
     pub struct Storage {
         groups: Map<u256, Group>,
-        group_members: Map<
-            u256, Vec<GroupMember>,
-        >,
+        group_members: Map<u256, Vec<GroupMember>>,
         group_count: u256,
         admin: ContractAddress,
         #[substorage(v0)]
@@ -185,27 +183,38 @@ pub mod AutoShare {
         }
 
         fn pay(ref self: ContractState, group_id: u256) {
-            let group: Group = self.get_group(group_id);
+            let mut group: Group = self.get_group(group_id);
+            assert(!group.is_paid, 'group is already paid');
+            assert(group.id != 0, 'group id is 0');
             let caller = get_caller_address();
+            assert(caller == group.creator, 'caller is not creator');
             let group_members_vec = self.group_members.entry(group_id);
             let amount = group.amount;
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
                 let members_money = amount * member.percentage.try_into().unwrap() / 100;
-                self._process_payment(members_money);
+                println!("member address: {:?}, members_money: {}", member.addr, members_money);
+                self._process_payment(members_money, caller, member.addr);
             }
+            group.is_paid = true;
+            self.groups.write(group_id, group);
         }
     }
 
     #[generate_trait]
     impl internal of InternalTrait {
-        fn _process_payment(ref self: ContractState, amount: u256) {
-            let strk_token = IERC20Dispatcher { contract_address: self.token_address.read() };
+        fn _process_payment(
+            ref self: ContractState,
+            amount: u256,
+            addr_from: ContractAddress,
+            addr_to: ContractAddress,
+        ) {
+            let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             let caller = get_caller_address();
             let contract_address = get_contract_address();
             self._check_token_allowance(caller, amount);
             self._check_token_balance(caller, amount);
-            strk_token.transfer_from(caller, contract_address, amount);
+            token.transfer_from(addr_from, addr_to, amount);
         }
         // Collects the group creation fee from the creator.
         fn _collect_group_creation_fee(ref self: ContractState, creator: ContractAddress) {
