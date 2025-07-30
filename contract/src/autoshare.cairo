@@ -33,7 +33,7 @@ pub mod AutoShare {
         groups: Map<u256, Group>,
         group_members: Map<
             u256, Vec<GroupMember>,
-        >, // or Map<u256, Map<u32, GroupMember>> for indexed access
+        >,
         group_count: u256,
         admin: ContractAddress,
         #[substorage(v0)]
@@ -186,7 +186,14 @@ pub mod AutoShare {
 
         fn pay(ref self: ContractState, group_id: u256) {
             let group: Group = self.get_group(group_id);
-            // let mut array_of_members: GroupMember = ArrayTrait::new();
+            let caller = get_caller_address();
+            let group_members_vec = self.group_members.entry(group_id);
+            let amount = group.amount;
+            for member in 0..group_members_vec.len() {
+                let member: GroupMember = group_members_vec.at(member).read();
+                let members_money = amount * member.percentage.try_into().unwrap() / 100;
+                self._process_payment(members_money);
+            }
         }
     }
 
