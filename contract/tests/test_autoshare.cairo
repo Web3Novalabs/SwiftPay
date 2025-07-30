@@ -321,7 +321,102 @@ fn test_pay_logic() {
     let user2_balance_after = erc20_dispatcher.balance_of(USER2_ADDR().into());
     println!("user1 balance after: {}", user1_balance_after);
     println!("user2 balance after: {}", user2_balance_after);
-    // assert(user1_balance_after == user1_balance_before + 600, 'user1 balance not up to date');
-    // assert(user2_balance_after == user2_balance_before + 400, 'user2 balance not up to date');
+    assert(user1_balance_after == user1_balance_before + 600, 'user1 balance not up to date');
+    assert(user2_balance_after == user2_balance_before + 400, 'user2 balance not up to date');
+    let creator_balance_after = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
+    println!("creator balance after: {}", creator_balance_after);
+    assert(creator_balance_after == creator_balance_after - 1000, 'creator balance not up to date');
+    let group = contract_address.get_group(1);
+    assert(group.is_paid, 'group is not paid');
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('group is already paid',))]
+fn test_pay_logic_should_fail_if_group_is_already_paid() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let mut members = ArrayTrait::new();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    let mut user1_balance_before = erc20_dispatcher.balance_of(USER1_ADDR().into());
+    let mut user2_balance_before = erc20_dispatcher.balance_of(USER2_ADDR().into());
+    println!("creator balance before: {}", erc20_dispatcher.balance_of(CREATOR_ADDR().into()));
+    println!("user1 balance before: {}", user1_balance_before);
+    println!("user2 balance before: {}", user2_balance_before);
+    contract_address.pay(1);
+    let user1_balance_after = erc20_dispatcher.balance_of(USER1_ADDR().into());
+    let user2_balance_after = erc20_dispatcher.balance_of(USER2_ADDR().into());
+    println!("user1 balance after: {}", user1_balance_after);
+    println!("user2 balance after: {}", user2_balance_after);
+    assert(user1_balance_after == user1_balance_before + 600, 'user1 balance not up to date');
+    assert(user2_balance_after == user2_balance_before + 400, 'user2 balance not up to date');
+    let creator_balance_after = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
+    println!("creator balance after: {}", creator_balance_after);
+    assert(creator_balance_after == creator_balance_after - 1000, 'creator balance not up to date');
+    let group = contract_address.get_group(1);
+    assert(group.is_paid, 'group is not paid');
+    stop_cheat_caller_address(contract_address.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.pay(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('group id is 0',))]
+fn test_pay_logic_should_fail_if_group_id_is_0() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let mut members = ArrayTrait::new();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+
+    contract_address.pay(0);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+fn test_pay_logic_should_fail_if_caller_is_not_creator() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let mut members = ArrayTrait::new();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    let mut user1_balance_before = erc20_dispatcher.balance_of(USER1_ADDR().into());
+    let mut user2_balance_before = erc20_dispatcher.balance_of(USER2_ADDR().into());
+    println!("creator balance before: {}", erc20_dispatcher.balance_of(CREATOR_ADDR().into()));
+    println!("user1 balance before: {}", user1_balance_before);
+    println!("user2 balance before: {}", user2_balance_before);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
+    contract_address.pay(1);
     stop_cheat_caller_address(contract_address.contract_address);
 }

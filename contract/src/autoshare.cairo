@@ -193,7 +193,6 @@ pub mod AutoShare {
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
                 let members_money = amount * member.percentage.try_into().unwrap() / 100;
-                println!("member address: {:?}, members_money: {}", member.addr, members_money);
                 self._process_payment(members_money, caller, member.addr);
             }
             group.is_paid = true;
