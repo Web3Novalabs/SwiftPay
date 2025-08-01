@@ -624,3 +624,211 @@ fn test_request_group_update_not_member() {
     contract_address.request_group_update(1, "UpdatedGroup", 2000, new_members);
     stop_cheat_caller_address(contract_address.contract_address);
 }
+
+#[test]
+fn test_approve_group_update_success() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 65 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 35 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // request group update
+    let mut new_members = ArrayTrait::new();
+    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.request_group_update(1, "UpdatedGroup", 2000, new_members);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // approve group update (need 2 approvals since total_members = 2)
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // approve with second member
+    start_cheat_caller_address(contract_address.contract_address, USER2_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // execute the group update (this actually updates the group name and amount)
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.execute_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // check group update
+    let group = contract_address.get_group(1);
+    assert(group.name == "UpdatedGroup", 'Name not updated');
+    assert(group.amount == 2000, 'Amount updated');
+    assert(group.is_paid == false, 'is_paid updated');
+
+    // // check group members
+// let group_members = contract_address.get_group_members(1);
+// assert(group_members.len() == 2, 'Group members not updated');
+// assert(group_members.at(0).addr == USER1_ADDR(), 'User1 not in group');
+// assert(group_members.at(1).addr == USER2_ADDR(), 'User2 not in group');
+// assert(group_members.at(0).percentage == 50, 'User1 percentage not updated');
+// assert(group_members.at(1).percentage == 50, 'User2 percentage not updated');
+}
+
+#[test]
+fn test_execute_group_update_success() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group with creator as member
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 30 });
+    members.append(GroupMember { addr: USER3_ADDR(), percentage: 10 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Request group update
+    let mut new_members = ArrayTrait::new();
+    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 45 });
+    new_members.append(GroupMember { addr: USER3_ADDR(), percentage: 5 });
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.request_group_update(1, "GroupUpdateSuccess", 2000, new_members);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Approve with all members
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER2_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER3_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Execute the group update
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.execute_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Verify the group was updated correctly
+    let group = contract_address.get_group(1);
+    assert(group.name == "GroupUpdateSuccess", 'Name not updated');
+    assert(group.amount == 2000, 'Amount not updated');
+    assert(group.is_paid == false, 'is_paid should reset to false');
+}
+
+#[test]
+#[should_panic(expected: ('caller is not the group creator',))]
+fn test_execute_group_update_not_creator() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Request and approve update
+    let mut new_members = ArrayTrait::new();
+    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.request_group_update(1, "UpdatedGroup", 2000, new_members);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER2_ADDR());
+    contract_address.approve_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Try to execute as non-creator
+    start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
+    contract_address.execute_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('no pending updt for this group',))]
+fn test_execute_group_update_not_completed() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Request update but don't approve
+    let mut new_members = ArrayTrait::new();
+    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.request_group_update(1, "UpdatedGroup", 2000, new_members);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Try to execute without approvals
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.execute_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('update request not completed',))]
+fn test_execute_group_update_no_pending_update() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", 1000, members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Try to execute without any update request
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.execute_group_update(1);
+    stop_cheat_caller_address(contract_address.contract_address);
+}

@@ -277,7 +277,6 @@ pub mod AutoShare {
             update_request_paid.fee_paid = true;
             self.update_requests.write(group_id, update_request_paid);
 
-            self.update_requests.write(group_id, update_request);
             self.has_pending_update.write(group_id, true);
 
             self
