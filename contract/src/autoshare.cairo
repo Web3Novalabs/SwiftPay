@@ -14,11 +14,15 @@ pub mod AutoShare {
         get_contract_address,
     };
     use crate::base::errors::{
-        ERROR_ZERO_ADDRESS, ERR_DUPLICATE_ADDRESS, ERR_INVALID_PERCENTAGE_SUM, ERR_TOO_FEW_MEMBERS,
-        ERR_UNAUTHORIZED, INSUFFICIENT_ALLOWANCE, INSUFFICIENT_STRK_BALANCE,
+        ERROR_ZERO_ADDRESS, ERR_ALREADY_APPROVED, ERR_DUPLICATE_ADDRESS, ERR_GROUP_NOT_FOUND,
+        ERR_INSUFFICIENT_APPROVALS, ERR_INVALID_PERCENTAGE_SUM, ERR_NOT_GROUP_MEMBER,
+        ERR_TOO_FEW_MEMBERS, ERR_UNAUTHORIZED, ERR_UPDATE_FEE_NOT_PAID,
+        ERR_UPDATE_REQUEST_NOT_FOUND, INSUFFICIENT_ALLOWANCE, INSUFFICIENT_STRK_BALANCE,
     };
-    use crate::base::events::GroupCreated;
-    use crate::base::types::{Group, GroupMember};
+    use crate::base::events::{
+        GroupCreated, GroupUpdateApproved, GroupUpdateRequested, GroupUpdated,
+    };
+    use crate::base::types::{Group, GroupMember, GroupUpdateRequest};
     use crate::interfaces::iautoshare::IAutoShare;
     const ONE_STRK: u256 = 1_000_000_000_000_000_000;
 
@@ -37,11 +41,21 @@ pub mod AutoShare {
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         token_address: ContractAddress,
+        // Group update storage
+        update_request_count: u256,
+        update_requests: Map<u256, GroupUpdateRequest>, // group_id -> update_request
+        update_request_new_members: Map<u256, Vec<GroupMember>>, // group_id -> new_members
+        update_approvals: Map<(u256, ContractAddress), bool>, // (group_id, member) -> has_approved
+        has_pending_update: Map<u256, bool> // group_id -> has_pending_update
     }
+
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         GroupCreated: GroupCreated,
+        GroupUpdateRequested: GroupUpdateRequested,
+        GroupUpdateApproved: GroupUpdateApproved,
+        GroupUpdated: GroupUpdated,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
     }
@@ -53,6 +67,7 @@ pub mod AutoShare {
         assert(admin != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
         self.admin.write(admin);
         self.group_count.write(0);
+        self.update_request_count.write(0);
         self.token_address.write(token_address);
     }
 
@@ -198,6 +213,130 @@ pub mod AutoShare {
             group.is_paid = true;
             self.groups.write(group_id, group);
         }
+
+        fn request_group_update(
+            ref self: ContractState,
+            group_id: u256,
+            new_name: ByteArray,
+            new_amount: u256,
+            new_members: Array<GroupMember>,
+        ) {
+            let mut group: Group = self.get_group(group_id);
+            assert(group.id != 0, ERR_GROUP_NOT_FOUND);
+            let caller = get_caller_address();
+            assert(caller == group.creator, 'caller is not creator');
+
+            let mut sum: u32 = 0;
+            let mut i: usize = 0;
+
+            // This code checks for duplicate addresses among group members
+            let member_count = new_members.len();
+            while i < member_count {
+                let m = new_members.at(i).clone();
+                sum += m.percentage.try_into().unwrap();
+                let mut j: usize = i + 1;
+                while j < member_count {
+                    let duplicate = m.addr == new_members.at(j).clone().addr;
+                    assert(!duplicate, 'list contain duplicate address');
+                    j += 1;
+                }
+                i += 1;
+            }
+            assert(sum == 100, 'total percentage must be 100');
+
+            let is_member = self.is_group_member(group_id, caller);
+            assert(is_member == true, 'caller is not a group member');
+
+            // Store the new members separately
+            let mut i: usize = 0;
+            let member_count = new_members.len();
+            while i < member_count {
+                let member = new_members.at(i);
+                // self.update_request_new_members.entry(group_id).push(member);
+                self.update_request_new_members.entry(group_id).append().write(*member);
+                i += 1;
+            }
+
+            let update_request = GroupUpdateRequest {
+                group_id,
+                new_name: new_name.clone(),
+                new_amount: new_amount,
+                requester: caller,
+                fee_paid: false,
+                approval_count: 0,
+                total_members: member_count.try_into().unwrap(),
+                is_completed: false,
+            };
+
+            // Collect the update fee
+            self._collect_group_update_fee(caller);
+
+            self.update_requests.write(group_id, update_request);
+            self.has_pending_update.write(group_id, true);
+
+            self
+                .emit(
+                    Event::GroupUpdateRequested(
+                        GroupUpdateRequested {
+                            group_id,
+                            requester: caller,
+                            new_name: new_name.clone(),
+                            new_amount: new_amount,
+                        },
+                    ),
+                );
+        }
+
+        fn approve_group_update(ref self: ContractState, group_id: u256) {
+            let mut group: Group = self.get_group(group_id);
+            assert(group.id != 0, ERR_GROUP_NOT_FOUND);
+            let caller = get_caller_address();
+
+            let is_member = self.is_group_member(group_id, caller);
+            assert(is_member == true, 'caller is not a group member');
+
+            let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
+
+            assert(update_request.is_completed == false, ERR_UPDATE_REQUEST_NOT_FOUND);
+
+            let approval_count = update_request.approval_count;
+            let total_members = update_request.total_members;
+
+            assert(approval_count < total_members, ERR_INSUFFICIENT_APPROVALS);
+
+            let approval_counts = approval_count + 1;
+            let mut updated_request = update_request;
+            updated_request.approval_count = approval_counts;
+            self.update_requests.write(group_id, updated_request);
+
+            if approval_counts == total_members {
+                let mut final_request = updated_request;
+                final_request.is_completed = true;
+                self.update_requests.write(group_id, final_request);
+                self.has_pending_update.write(group_id, false);
+
+                let new_members = self.get_update_request_new_members(group_id);
+                let mut i: u32 = 0;
+                let member_count: u32 = new_members.len();
+                while i < member_count {
+                    let member = new_members.at(i).clone();
+                    self.group_members.entry(group_id).push(member);
+                    i += 1;
+                }
+            }
+
+            self
+                .emit(
+                    Event::GroupUpdateApproved(
+                        GroupUpdateApproved {
+                            group_id,
+                            approver: caller,
+                            approval_count: approval_counts,
+                            total_members: total_members,
+                        },
+                    ),
+                );
+        }
     }
 
     #[generate_trait]
@@ -215,17 +354,67 @@ pub mod AutoShare {
             self._check_token_balance(caller, amount);
             token.transfer_from(addr_from, addr_to, amount);
         }
+
+        /// Returns true if the address is found among the group members, false otherwise.
+        fn is_group_member(
+            ref self: ContractState, group_id: u256, member_addr: ContractAddress,
+        ) -> bool {
+            // Get the vector of group members for the given group_id
+            let group_members = self.group_members.entry(group_id);
+
+            // Iterate over the group members
+            let mut i: u64 = 0;
+            let len: u64 = group_members.len();
+            while i < len {
+                let member = group_members.at(i).read();
+                if member_addr == member.addr {
+                    return true;
+                }
+                i += 1;
+            }
+            false
+        }
+
+        fn _collect_group_update_fee(ref self: ContractState, requester: ContractAddress) {
+            // Retrieve the STRK token contract
+            let strk_token = IERC20Dispatcher { contract_address: self.token_address.read() };
+
+            // Check update fee requirements
+            let _contract_address = get_contract_address();
+            self.assert_group_creation_fee_requirements(strk_token, requester, _contract_address);
+
+            // Transfer the update fee from requester to the contract
+            strk_token.transfer_from(requester, _contract_address, ONE_STRK);
+        }
+
+        fn get_update_request_new_members(
+            self: @ContractState, group_id: u256,
+        ) -> Array<GroupMember> {
+            let new_members_vec = self.update_request_new_members.entry(group_id);
+            let mut result = ArrayTrait::new();
+
+            let mut i: u64 = 0;
+            let len: u64 = new_members_vec.len();
+            while i < len {
+                let member = new_members_vec.at(i).read();
+                result.append(member);
+                i += 1;
+            }
+
+            result
+        }
+
         // Collects the group creation fee from the creator.
         fn _collect_group_creation_fee(ref self: ContractState, creator: ContractAddress) {
             // Retrieve the STRK token contract
             let strk_token = IERC20Dispatcher { contract_address: self.token_address.read() };
 
             // Check group creation fee requirements using SecurityTrait
-            let contract_address = get_contract_address();
-            self.assert_group_creation_fee_requirements(strk_token, creator, contract_address);
+            let _contract_address = get_contract_address();
+            self.assert_group_creation_fee_requirements(strk_token, creator, _contract_address);
 
             // Transfer the pool creation fee from creator to the contract
-            strk_token.transfer_from(creator, contract_address, ONE_STRK);
+            strk_token.transfer_from(creator, _contract_address, ONE_STRK);
         }
 
         fn _check_token_allowance(ref self: ContractState, spender: ContractAddress, amount: u256) {

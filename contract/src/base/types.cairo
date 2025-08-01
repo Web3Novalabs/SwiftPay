@@ -15,3 +15,16 @@ pub struct Group {
     pub is_paid: bool,
     pub creator: ContractAddress,
 }
+
+// GroupUpdateRequest type for tracking update requests
+#[derive(Drop, Serde, PartialEq, starknet::Store, Clone)]
+pub struct GroupUpdateRequest {
+    pub group_id: u256,
+    pub new_name: ByteArray,
+    pub new_amount: u256,
+    pub requester: ContractAddress,
+    pub fee_paid: bool,
+    pub approval_count: u8,
+    pub total_members: u8,
+    pub is_completed: bool,
+}
