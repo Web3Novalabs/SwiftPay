@@ -99,6 +99,7 @@ pub mod AutoShare {
             assert(allowed_amount >= ONE_STRK, INSUFFICIENT_ALLOWANCE);
         }
     }
+
     #[abi(embed_v0)]
     impl autoshare of IAutoShare<ContractState> {
         fn create_group(
@@ -271,6 +272,11 @@ pub mod AutoShare {
             // Collect the update fee
             self._collect_group_update_fee(caller);
 
+            // set fee_paid to true after collecting the fee
+            let mut update_request_paid = update_request.clone();
+            update_request_paid.fee_paid = true;
+            self.update_requests.write(group_id, update_request_paid);
+
             self.update_requests.write(group_id, update_request);
             self.has_pending_update.write(group_id, true);
 
@@ -295,8 +301,17 @@ pub mod AutoShare {
             let is_member = self.is_group_member(group_id, caller);
             assert(is_member == true, 'caller is not a group member');
 
+            // Check if the group has a pending update
+            let already_approved = self.update_approvals.read((group_id, caller));
+            assert(already_approved == false, ERR_ALREADY_APPROVED);
+
             let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
 
+            // checks if the update fee has been paid
+
+            assert(update_request.fee_paid == true, ERR_UPDATE_FEE_NOT_PAID);
+
+            // check if the update request exists and is not completed
             assert(update_request.is_completed == false, ERR_UPDATE_REQUEST_NOT_FOUND);
 
             let approval_count = update_request.approval_count;
@@ -304,13 +319,20 @@ pub mod AutoShare {
 
             assert(approval_count < total_members, ERR_INSUFFICIENT_APPROVALS);
 
+            // Mark caller as having approved the update
+            self.update_approvals.write((group_id, caller), true);
+
             let approval_counts = approval_count + 1;
-            let mut updated_request = update_request;
+            let mut updated_request = update_request.clone();
             updated_request.approval_count = approval_counts;
+
+            // Clone for event BEFORE moving to storage
+            let updated_request_for_event = updated_request.clone();
+
             self.update_requests.write(group_id, updated_request);
 
             if approval_counts == total_members {
-                let mut final_request = updated_request;
+                let mut final_request = updated_request_for_event.clone();
                 final_request.is_completed = true;
                 self.update_requests.write(group_id, final_request);
                 self.has_pending_update.write(group_id, false);
@@ -323,6 +345,19 @@ pub mod AutoShare {
                     self.group_members.entry(group_id).push(member);
                     i += 1;
                 }
+
+                self
+                    .emit(
+                        Event::GroupUpdated(
+                            GroupUpdated {
+                                group_id,
+                                old_name: group.name.clone(),
+                                new_name: updated_request_for_event.new_name.clone(),
+                                old_amount: group.amount,
+                                new_amount: updated_request_for_event.new_amount,
+                            },
+                        ),
+                    );
             }
 
             self
@@ -334,6 +369,82 @@ pub mod AutoShare {
                             approval_count: approval_counts,
                             total_members: total_members,
                         },
+                    ),
+                );
+        }
+
+        fn execute_group_update(ref self: ContractState, group_id: u256) {
+            let mut group: Group = self.get_group(group_id);
+            assert(group.id != 0, ERR_GROUP_NOT_FOUND);
+            let caller = get_caller_address();
+
+            // Check if the group has a pending update
+            let has_pending_update = self.has_pending_update.read(group_id);
+            assert(has_pending_update == false, 'no pending updt for this group');
+
+            // Retrieve the update request
+            let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
+            assert(update_request.is_completed == true, 'update request not completed');
+
+            // Check if the caller is the group creator
+            let is_creator = caller == group.creator;
+            assert(is_creator, 'caller is not the group creator');
+
+            // Store old and new values for the event BEFORE moving group
+            let old_name = group.name.clone();
+            let old_amount = group.amount;
+            let new_name = update_request.new_name.clone();
+            let new_amount = update_request.new_amount;
+
+            // Update the group with new values
+            group.name = new_name.clone();
+            group.amount = new_amount;
+            group.is_paid = false; // Reset is_paid to false after update
+            self.groups.write(group_id, group);
+
+            // Clear the update request
+            self
+                .update_requests
+                .write(
+                    group_id,
+                    GroupUpdateRequest {
+                        group_id: 0,
+                        new_name: "",
+                        new_amount: 0,
+                        requester: starknet::contract_address_const::<0>(),
+                        fee_paid: false,
+                        approval_count: 0,
+                        total_members: 0,
+                        is_completed: false,
+                    },
+                );
+
+            // Clear the new members for the update request
+            let mut new_members_vec = self.update_request_new_members.entry(group_id);
+            let mut len = new_members_vec.len();
+            while len > 0 {
+                new_members_vec.pop();
+                len -= 1;
+            }
+
+            // Clear the update approvals for all current group members
+            let group_members_vec = self.group_members.entry(group_id);
+            let mut i: u64 = 0;
+            let len: u64 = group_members_vec.len();
+            while i < len {
+                let member = group_members_vec.at(i).read();
+                self.update_approvals.write((group_id, member.addr), false);
+                i += 1;
+            }
+
+            // Clear the pending update status
+            self.has_pending_update.write(group_id, false);
+
+            // Emit the GroupUpdated event
+            self
+                .emit(
+                    Event::GroupUpdated(
+                        GroupUpdated { group_id, old_name, new_name, old_amount, new_amount },
                     ),
                 );
         }
