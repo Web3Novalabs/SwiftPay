@@ -672,7 +672,6 @@ fn test_approve_group_update_success() {
     assert(group.name == "UpdatedGroup", 'Name not updated');
     assert(group.amount == 2000, 'Amount updated');
     assert(group.is_paid == false, 'is_paid updated');
-
     // // check group members
 // let group_members = contract_address.get_group_members(1);
 // assert(group_members.len() == 2, 'Group members not updated');
@@ -690,7 +689,8 @@ fn test_execute_group_update_success() {
     // Create a group with creator as member
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
@@ -744,7 +744,8 @@ fn test_execute_group_update_not_creator() {
     // Create a group
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
@@ -785,7 +786,8 @@ fn test_execute_group_update_not_completed() {
     // Create a group
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
@@ -818,7 +820,8 @@ fn test_execute_group_update_no_pending_update() {
     // Create a group
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
-    erc20_dispatcher.approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
