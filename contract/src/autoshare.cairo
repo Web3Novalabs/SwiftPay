@@ -407,12 +407,11 @@ pub mod AutoShare {
 
             // Check if the group has a pending update
             let has_pending_update = self.has_pending_update.read(group_id);
-            println!("pending update {}", has_pending_update);
             assert(has_pending_update == false, 'no pending updt for this group');
 
             // Retrieve the update request
             let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
-            println!("update request {:?}", update_request);
+
             assert(update_request.is_completed == true, 'update request not completed');
 
             // Check if the caller is the group creator
