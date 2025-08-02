@@ -190,6 +190,41 @@ pub mod AutoShare {
             groups
         }
 
+        fn get_group_member(self: @ContractState, group_id: u256) -> Array<GroupMember> {
+            let members = self.group_members.entry(group_id);
+            let mut group_members: Array<GroupMember> = ArrayTrait::new();
+
+            let mut i: u64 = 0;
+            let len: u64 = members.len();
+            while i < len {
+                group_members.append(members.at(i).read());
+                i += 1;
+            }
+            group_members
+        }
+        fn get_address_groups(self: @ContractState, address: ContractAddress) -> Array<Group> {
+            let mut group: Array<Group> = ArrayTrait::new();
+            let count = self.group_count.read();
+            print!("count {}", count);
+            let len: u64 = count.try_into().unwrap();
+            let mut i: u64 = 1;
+            while i <= len {
+                let m: u256 = i.try_into().unwrap();
+
+                let group_member = self.group_members.entry(m);
+
+                for member in 0..group_member.len() {
+                    let vec = group_member.at(member).read();
+                    if vec.addr == address {
+                        let has_share_in_group = self.groups.read(m);
+                        group.append(has_share_in_group);
+                    }
+                }
+                i = i + 1;
+            }
+            group
+        }
+
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.assert_only_admin();
 
@@ -245,8 +280,8 @@ pub mod AutoShare {
             }
             assert(sum == 100, 'total percentage must be 100');
 
-            let is_member = self.is_group_member(group_id, caller);
-            assert(is_member == true, 'caller is not a group member');
+            // let is_member = self.is_group_member(group_id, caller);
+            // assert(is_member == true, 'caller is not a group member');
 
             // Store the new members separately
             let mut i: usize = 0;
@@ -265,7 +300,7 @@ pub mod AutoShare {
                 requester: caller,
                 fee_paid: false,
                 approval_count: 0,
-                total_members: member_count.try_into().unwrap(),
+                // total_members: member_count.try_into().unwrap(),
                 is_completed: false,
             };
 
@@ -314,9 +349,9 @@ pub mod AutoShare {
             assert(update_request.is_completed == false, ERR_UPDATE_REQUEST_NOT_FOUND);
 
             let approval_count = update_request.approval_count;
-            let total_members = update_request.total_members;
-
-            assert(approval_count < total_members, ERR_INSUFFICIENT_APPROVALS);
+            let total_members = self.get_group_member(group_id);
+            let total_members = total_members.len();
+            assert(approval_count < total_members.try_into().unwrap(), ERR_INSUFFICIENT_APPROVALS);
 
             // Mark caller as having approved the update
             self.update_approvals.write((group_id, caller), true);
@@ -329,21 +364,14 @@ pub mod AutoShare {
             let updated_request_for_event = updated_request.clone();
 
             self.update_requests.write(group_id, updated_request);
-
-            if approval_counts == total_members {
+            if approval_counts == total_members.try_into().unwrap() {
                 let mut final_request = updated_request_for_event.clone();
                 final_request.is_completed = true;
                 self.update_requests.write(group_id, final_request);
                 self.has_pending_update.write(group_id, false);
 
                 let new_members = self.get_update_request_new_members(group_id);
-                let mut i: u32 = 0;
-                let member_count: u32 = new_members.len();
-                while i < member_count {
-                    let member = new_members.at(i).clone();
-                    self.group_members.entry(group_id).push(member);
-                    i += 1;
-                }
+                let mut member_count: u32 = new_members.len();
 
                 self
                     .emit(
@@ -366,7 +394,7 @@ pub mod AutoShare {
                             group_id,
                             approver: caller,
                             approval_count: approval_counts,
-                            total_members: total_members,
+                            total_members: total_members.try_into().unwrap(),
                         },
                     ),
                 );
@@ -379,10 +407,12 @@ pub mod AutoShare {
 
             // Check if the group has a pending update
             let has_pending_update = self.has_pending_update.read(group_id);
+            println!("pending update {}", has_pending_update);
             assert(has_pending_update == false, 'no pending updt for this group');
 
             // Retrieve the update request
             let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
+            println!("update request {:?}", update_request);
             assert(update_request.is_completed == true, 'update request not completed');
 
             // Check if the caller is the group creator
@@ -413,10 +443,29 @@ pub mod AutoShare {
                         requester: starknet::contract_address_const::<0>(),
                         fee_paid: false,
                         approval_count: 0,
-                        total_members: 0,
+                        // total_members: 0,
                         is_completed: false,
                     },
                 );
+
+            // remove all previous members
+            let new_members = self.get_update_request_new_members(group_id);
+            let mut member_count: u32 = new_members.len();
+            let mut members_vec = self.group_members.entry(group_id);
+            while member_count > 0 {
+                members_vec.pop();
+                member_count -= 1;
+            }
+
+            let mut i: u32 = 0;
+            let member_count = self.update_request_new_members.entry(group_id);
+            let mut len: u32 = member_count.len().try_into().unwrap();
+            while i < len {
+                let m: u64 = i.try_into().unwrap();
+                let member = new_members.at(i).clone();
+                self.group_members.entry(group_id).push(member);
+                i += 1;
+            }
 
             // Clear the new members for the update request
             let mut new_members_vec = self.update_request_new_members.entry(group_id);

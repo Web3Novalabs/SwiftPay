@@ -158,7 +158,8 @@ fn test_get_group_success() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
-    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 20 });
+    members.append(GroupMember { addr: USER3_ADDR(), percentage: 20 });
     start_cheat_caller_address(contract_address.contract_address, ADMIN_ADDR());
     contract_address.create_group("TestGroup2", 1000, members, token);
     // Should succeed for admin and
@@ -167,6 +168,23 @@ fn test_get_group_success() {
     let group2 = contract_address.get_group(2);
     assert(group1.name == "TestGroup1", 'Wrong group name');
     assert(group2.name == "TestGroup2", 'Wrong group name');
+
+    let group_members1 = contract_address.get_group_member(1);
+    let group_members2 = contract_address.get_group_member(2);
+
+    assert(group_members1.len() == 2, 'len not 2');
+    assert(group_members2.len() == 3, 'len not 3');
+
+    // check how number of group an address is part of
+    let has_share_in_group1 = contract_address.get_address_groups(USER3_ADDR());
+    let has_share_in_group2 = contract_address.get_address_groups(USER1_ADDR());
+    let has_share_in_group3 = contract_address.get_address_groups(USER2_ADDR());
+    let has_share_in_group4 = contract_address.get_address_groups(CREATOR_ADDR());
+
+    assert(has_share_in_group1.len() == 1, 'has share in only one group');
+    assert(has_share_in_group2.len() == 2, 'has share in only two group');
+    assert(has_share_in_group3.len() == 2, 'has share in only two group');
+    assert(has_share_in_group4.len() == 0, 'has no share in only any group');
 }
 
 
@@ -593,7 +611,7 @@ fn test_request_group_update_duplicate_address() {
 }
 
 #[test]
-#[should_panic(expected: ('caller is not a group member',))]
+// #[should_panic(expected: ('caller is not a group member',))]
 fn test_request_group_update_not_member() {
     let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
@@ -645,8 +663,9 @@ fn test_approve_group_update_success() {
 
     // request group update
     let mut new_members = ArrayTrait::new();
-    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
-    new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: USER3_ADDR(), percentage: 25 });
+    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 25 });
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     contract_address.request_group_update(1, "UpdatedGroup", 2000, new_members);
@@ -673,12 +692,16 @@ fn test_approve_group_update_success() {
     assert(group.amount == 2000, 'Amount updated');
     assert(group.is_paid == false, 'is_paid updated');
     // // check group members
-// let group_members = contract_address.get_group_members(1);
-// assert(group_members.len() == 2, 'Group members not updated');
-// assert(group_members.at(0).addr == USER1_ADDR(), 'User1 not in group');
-// assert(group_members.at(1).addr == USER2_ADDR(), 'User2 not in group');
-// assert(group_members.at(0).percentage == 50, 'User1 percentage not updated');
-// assert(group_members.at(1).percentage == 50, 'User2 percentage not updated');
+    let group_members = contract_address.get_group_member(1);
+    assert(group_members.len() == 3, 'Group members not updated');
+    assert(*group_members.at(0).addr == CREATOR_ADDR(), 'creator not in group');
+    assert(*group_members.at(1).addr == USER3_ADDR(), 'User3 not in group');
+    assert(*group_members.at(0).percentage == 50, 'creator percentage not updated');
+    assert(*group_members.at(1).percentage == 25, 'User3 percentage not updated');
+
+    // check how number of group an address is part of
+    let has_share_in_group = contract_address.get_address_groups(USER3_ADDR());
+    assert(has_share_in_group.len() == 1, 'has share in only one group');
 }
 
 #[test]

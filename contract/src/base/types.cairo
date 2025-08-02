@@ -25,6 +25,6 @@ pub struct GroupUpdateRequest {
     pub requester: ContractAddress,
     pub fee_paid: bool,
     pub approval_count: u8,
-    pub total_members: u8,
+    // pub total_members: u8,
     pub is_completed: bool,
 }

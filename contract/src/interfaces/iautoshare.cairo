@@ -13,7 +13,9 @@ pub trait IAutoShare<TContractState> {
     fn get_group(self: @TContractState, group_id: u256) -> Group;
     fn get_all_groups(self: @TContractState) -> Array<Group>;
     fn get_groups_by_paid(self: @TContractState, is_paid: bool) -> Array<Group>;
-
+    fn get_group_member(self: @TContractState, group_id: u256) -> Array<GroupMember>;
+    // return the list of groups that a address is part of
+    fn get_address_groups(self: @TContractState, address: ContractAddress) -> Array<Group>;
     // Upgradeability
 
     /// @notice Upgrades the contract implementation.
