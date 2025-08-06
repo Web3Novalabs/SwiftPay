@@ -1,14 +1,11 @@
 #[starknet::contract]
 pub mod AutoshareChild {
-    use starknet::get_block_timestamp;
-use starknet::get_caller_address;
-use starknet::get_contract_address;
-use starknet::ContractAddress;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::storage::{
         Map, MutableVecTrait, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry,
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
     };
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
     use crate::base::types::{Group, GroupMember};
     use crate::interfaces::iautoshare_child::IAutoshareChild;
 
@@ -102,11 +99,7 @@ use starknet::ContractAddress;
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        fn _process_payment(
-            ref self: ContractState,
-            amount: u256,
-            addr_to: ContractAddress,
-        ) {
+        fn _process_payment(ref self: ContractState, amount: u256, addr_to: ContractAddress) {
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             let contract_address = get_contract_address();
             self._check_token_balance(contract_address, amount);
