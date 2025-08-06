@@ -6,7 +6,9 @@ pub mod base {
 
 pub mod interfaces {
     pub mod iautoshare;
+    pub mod iautoshare_child;
 }
 pub mod autoshare;
+pub mod autoshare_child;
 
 pub mod mock_strk;
