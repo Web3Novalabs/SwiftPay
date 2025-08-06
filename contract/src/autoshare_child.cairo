@@ -13,7 +13,7 @@ pub mod AutoshareChild {
     struct Storage {
         group_id: u256,
         group: Group,
-        parent_contract_address: ContractAddress,
+        emergency_withdraw_address: ContractAddress,
         created_at: u64,
         group_members: Vec<GroupMember>,
         token_address: ContractAddress,
@@ -25,17 +25,14 @@ pub mod AutoshareChild {
         ref self: ContractState,
         group_id: u256,
         group: Group,
-        parent_contract_address: ContractAddress,
-        name: ByteArray,
-        amount: u256,
-        creator: ContractAddress,
+        emergency_withdraw_address: ContractAddress,
         members: Array<GroupMember>,
         token_address: ContractAddress,
         admin: ContractAddress,
     ) {
         self.group_id.write(group_id);
         self.group.write(group);
-        self.parent_contract_address.write(parent_contract_address);
+        self.emergency_withdraw_address.write(emergency_withdraw_address);
         self.created_at.write(get_block_timestamp());
         self.token_address.write(token_address);
         self.admin.write(admin);
@@ -52,6 +49,7 @@ pub mod AutoshareChild {
             ref self: contract::autoshare_child::AutoshareChild::ContractState,
             group_id: core::integer::u256,
         ) {
+            self.assert_only_admin();
             let mut group: Group = self.group.read();
             assert(!group.is_paid, 'group is already paid');
             assert(group.id != 0, 'group id is 0');
@@ -80,12 +78,11 @@ pub mod AutoshareChild {
             ref self: contract::autoshare_child::AutoshareChild::ContractState,
             group_id: core::integer::u256,
         ) {
-            let caller = get_caller_address();
-            assert(caller == self.admin.read(), 'caller is not admin');
+            self.assert_only_admin();
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             let contract_address = get_contract_address();
             let balance: u256 = token.balance_of(contract_address);
-            token.transfer(self.parent_contract_address.read(), balance);
+            token.transfer(self.emergency_withdraw_address.read(), balance);
         }
 
         fn get_balance(
@@ -110,6 +107,15 @@ pub mod AutoshareChild {
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             let balance = token.balance_of(caller);
             assert(balance >= amount, 'insufficient balance');
+        }
+    }
+
+    #[generate_trait]
+    impl SecurityImpl of SecurityTrait {
+        fn assert_only_admin(self: @ContractState) {
+            let caller = get_caller_address();
+
+            assert(self.admin.read() == caller, 'Only admin allowed');
         }
     }
 }
