@@ -17,6 +17,7 @@ const USER1_CONST: felt252 = 101112;
 const USER2_CONST: felt252 = 131415;
 const USER3_CONST: felt252 = 1314164;
 const TOKEN_CONST: felt252 = 13141324;
+const EMERGENCY_WITHDRAW_CONST: felt252 = 13141325;
 
 pub fn ADMIN_ADDR() -> ContractAddress {
     ADMIN_CONST.try_into().unwrap()
@@ -42,6 +43,10 @@ pub fn TOKEN_ADDR() -> ContractAddress {
     TOKEN_CONST.try_into().unwrap()
 }
 
+pub fn EMERGENCY_WITHDRAW_ADDR() -> ContractAddress {
+    EMERGENCY_WITHDRAW_CONST.try_into().unwrap()
+}
+
 
 // deploy the autoshare contract
 fn deploy_autoshare_contract() -> (IAutoShareDispatcher, IERC20Dispatcher) {
@@ -49,6 +54,8 @@ fn deploy_autoshare_contract() -> (IAutoShareDispatcher, IERC20Dispatcher) {
     let mut calldata = array![CREATOR_ADDR().into(), CREATOR_ADDR().into(), 6];
     let (erc20_address, _) = erc20_class.deploy(@calldata).unwrap();
     let erc20_dispatcher = IERC20Dispatcher { contract_address: erc20_address };
+
+    
 
     let contract = declare("AutoShare").unwrap().contract_class();
     let constructor_calldata = array![ADMIN_ADDR().into(), erc20_address.into()];

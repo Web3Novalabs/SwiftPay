@@ -9,6 +9,7 @@ pub mod AutoShare {
         Map, MutableVecTrait, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry,
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
     };
+    use starknet::syscalls::deploy_syscall;
     use starknet::{
         ClassHash, ContractAddress, contract_address_const, get_caller_address,
         get_contract_address,
@@ -46,7 +47,10 @@ pub mod AutoShare {
         update_requests: Map<u256, GroupUpdateRequest>, // group_id -> update_request
         update_request_new_members: Map<u256, Vec<GroupMember>>, // group_id -> new_members
         update_approvals: Map<(u256, ContractAddress), bool>, // (group_id, member) -> has_approved
-        has_pending_update: Map<u256, bool> // group_id -> has_pending_update
+        has_pending_update: Map<u256, bool>, // group_id -> has_pending_update
+        child_contract_class_hash: ClassHash,
+        group_addresses: Map<u256, ContractAddress>, // group_id -> child_contract_address
+        emergency_withdraw_address: ContractAddress,
     }
 
     #[event]
@@ -62,13 +66,19 @@ pub mod AutoShare {
 
     #[constructor]
     pub fn constructor(
-        ref self: ContractState, admin: ContractAddress, token_address: ContractAddress,
+        ref self: ContractState,
+        admin: ContractAddress,
+        token_address: ContractAddress,
+        emergency_withdraw_address: ContractAddress,
+        child_contract_class_hash: ClassHash,
     ) {
         assert(admin != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
         self.admin.write(admin);
         self.group_count.write(0);
         self.update_request_count.write(0);
         self.token_address.write(token_address);
+        self.emergency_withdraw_address.write(emergency_withdraw_address);
+        self.child_contract_class_hash.write(child_contract_class_hash);
     }
 
     #[generate_trait]
@@ -138,7 +148,7 @@ pub mod AutoShare {
             let group = Group {
                 id, name: name.clone(), amount, is_paid: false, creator: get_caller_address(),
             };
-            self.groups.write(id, group);
+            self.groups.write(id, group.clone());
 
             i = 0;
             while i < member_count {
@@ -148,6 +158,24 @@ pub mod AutoShare {
             // Collect pool creation fee (1 STRK)
             self._collect_group_creation_fee(caller);
             self.group_count.write(id);
+
+            let mut constructor_calldata: Array<felt252> = array![];
+            (
+                id,
+                group,
+                self.emergency_withdraw_address.read(),
+                members,
+                token_address,
+                self.admin.read(),
+                get_contract_address(),
+            )
+                .serialize(ref constructor_calldata);
+
+            let (contract_address_for_group, _) = deploy_syscall(
+                self.child_contract_class_hash.read(), 0, constructor_calldata.span(), false,
+            )
+                .unwrap();
+            self.group_addresses.write(id, contract_address_for_group);
 
             self
                 .emit(
@@ -237,14 +265,16 @@ pub mod AutoShare {
             let mut group: Group = self.get_group(group_id);
             assert(!group.is_paid, 'group is already paid');
             assert(group.id != 0, 'group id is 0');
-            let caller = get_caller_address();
-            assert(caller == group.creator, 'caller is not creator');
+            // removed the logic where caller is the creator
             let group_members_vec = self.group_members.entry(group_id);
-            let amount = group.amount;
+            let group_address = self.group_addresses.read(group_id);
+            let amount = self._check_token_balance_of_child(group_address);
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
                 let members_money = amount * member.percentage.try_into().unwrap() / 100;
-                self._process_payment(members_money, caller, member.addr);
+                // now transfer from group address to member address
+                let token = IERC20Dispatcher { contract_address: self.token_address.read() };
+                token.transfer(member.addr, members_money);
             }
             group.is_paid = true;
             self.groups.write(group_id, group);
@@ -585,6 +615,14 @@ pub mod AutoShare {
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             let balance = token.balance_of(caller);
             assert(balance >= amount, 'insufficient balance');
+        }
+
+        fn _check_token_balance_of_child(
+            self: @ContractState, group_address: ContractAddress,
+        ) -> u256 {
+            let token = IERC20Dispatcher { contract_address: self.token_address.read() };
+            let balance = token.balance_of(group_address);
+            balance
         }
     }
 }
