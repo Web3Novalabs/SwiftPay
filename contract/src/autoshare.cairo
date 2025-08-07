@@ -167,7 +167,6 @@ pub mod AutoShare {
                 members,
                 token_address,
                 self.admin.read(),
-                get_contract_address(),
             )
                 .serialize(ref constructor_calldata);
 
@@ -253,6 +252,12 @@ pub mod AutoShare {
             group
         }
 
+
+        fn get_group_address(self: @ContractState, group_id: u256) -> ContractAddress {
+            let group_address: ContractAddress = self.group_addresses.read(group_id);
+            group_address
+        }
+
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.assert_only_admin();
 
@@ -267,14 +272,15 @@ pub mod AutoShare {
             assert(group.id != 0, 'group id is 0');
             // removed the logic where caller is the creator
             let group_members_vec = self.group_members.entry(group_id);
-            let group_address = self.group_addresses.read(group_id);
+            let group_address = self.get_group_address(group_id);
             let amount = self._check_token_balance_of_child(group_address);
+            assert(amount > 0, 'no payment made');
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
                 let members_money = amount * member.percentage.try_into().unwrap() / 100;
                 // now transfer from group address to member address
                 let token = IERC20Dispatcher { contract_address: self.token_address.read() };
-                token.transfer(member.addr, members_money);
+                token.transfer_from(group_address, member.addr, members_money);
             }
             group.is_paid = true;
             self.groups.write(group_id, group);

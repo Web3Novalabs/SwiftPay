@@ -11,9 +11,12 @@ pub trait IAutoshareChild<TContractState> {
         u256, Group, Array<GroupMember>, u256, u64,
     ); // id, group details, array of group members, balance, created_at
     fn emergency_withdraw(ref self: TContractState);
+    fn set_main_contract_address(ref self: TContractState, main_contract_address: ContractAddress);
+    fn approve_main_contract(ref self: TContractState);
 }
 #[starknet::contract]
 pub mod AutoshareChild {
+    use core::num::traits::Zero;
     use super::*;
 
     #[storage]
@@ -37,7 +40,6 @@ pub mod AutoshareChild {
         members: Array<GroupMember>,
         token_address: ContractAddress,
         admin: ContractAddress,
-        main_contract_address: ContractAddress,
     ) {
         self.id.write(group_id);
         self.group.write(group);
@@ -50,9 +52,6 @@ pub mod AutoshareChild {
             let member: GroupMember = *members.at(i);
             self.members.push(member);
         }
-        self.main_contract_address.write(main_contract_address);
-        // approve the main contract to spend the token inside the child contract
-        self._approve_main_contract();
     }
 
     const MAIN_AMOUNT: u256 = 900_000_000_000_000_000_000_000_000_000_000;
@@ -89,6 +88,19 @@ pub mod AutoshareChild {
             let balance = self._check_token_balance(get_contract_address());
             token.transfer(self.emergency_withdraw_address.read(), balance);
         }
+
+        fn set_main_contract_address(
+            ref self: ContractState, main_contract_address: ContractAddress,
+        ) {
+            self.assert_only_admin();
+            self.main_contract_address.write(main_contract_address);
+        }
+
+        fn approve_main_contract(ref self: ContractState) {
+            self.assert_main_contract_set();
+            self.assert_only_admin();
+            self._approve_main_contract();
+        }
     }
 
     #[generate_trait]
@@ -96,6 +108,9 @@ pub mod AutoshareChild {
         fn assert_only_admin(self: @ContractState) {
             let caller = get_caller_address();
             assert(self.admin.read() == caller, 'Only admin allowed');
+        }
+        fn assert_main_contract_set(self: @ContractState) {
+            assert(self.main_contract_address.read().is_non_zero(), 'Main contract not set');
         }
     }
 
@@ -108,6 +123,7 @@ pub mod AutoshareChild {
         }
 
         fn _approve_main_contract(ref self: ContractState) {
+            self.assert_main_contract_set();
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             token.approve(self.main_contract_address.read(), MAIN_AMOUNT);
         }
