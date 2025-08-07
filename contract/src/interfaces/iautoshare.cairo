@@ -5,7 +5,6 @@ pub trait IAutoShare<TContractState> {
     fn create_group(
         ref self: TContractState,
         name: ByteArray,
-        amount: u256,
         members: Array<GroupMember>,
         token_address: ContractAddress,
     );
@@ -24,13 +23,12 @@ pub trait IAutoShare<TContractState> {
     /// @dev Can only be called by admin when contract is not paused.
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
 
-    fn pay(ref self: TContractState, group_id: u256);
+    fn pay(ref self: TContractState, group_address: ContractAddress);
 
     fn request_group_update(
         ref self: TContractState,
         group_id: u256,
         new_name: ByteArray,
-        new_amount: u256,
         new_members: Array<GroupMember>,
     );
     fn approve_group_update(ref self: TContractState, group_id: u256);
