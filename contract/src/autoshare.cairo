@@ -50,7 +50,7 @@ pub mod AutoShare {
         has_pending_update: Map<u256, bool>, // group_id -> has_pending_update
         child_contract_class_hash: ClassHash,
         group_addresses: Map<u256, ContractAddress>, // group_id -> child_contract_address
-        group_addresses_map:Map<ContractAddress,u256>, // child_contract_address ->  group_id
+        group_addresses_map: Map<ContractAddress, u256>, // child_contract_address ->  group_id
         emergency_withdraw_address: ContractAddress,
     }
 
@@ -110,7 +110,7 @@ pub mod AutoShare {
             assert(allowed_amount >= ONE_STRK, INSUFFICIENT_ALLOWANCE);
         }
 
-        fn _get_group_id(self: @ContractState,address: ContractAddress)-> u256{
+        fn _get_group_id(self: @ContractState, address: ContractAddress) -> u256 {
             let group_id = self.group_addresses_map.read(address);
             group_id
         }
@@ -180,7 +180,7 @@ pub mod AutoShare {
             )
                 .unwrap();
             self.group_addresses.write(id, contract_address_for_group);
-            self.group_addresses_map.write(contract_address_for_group,id);
+            self.group_addresses_map.write(contract_address_for_group, id);
 
             self
                 .emit(
@@ -273,11 +273,11 @@ pub mod AutoShare {
         }
 
         fn pay(ref self: ContractState, group_address: ContractAddress) {
-            let group_id:u256 = self._get_group_id(group_address);
+            let group_id: u256 = self._get_group_id(group_address);
             let mut group: Group = self.get_group(group_id);
             let caller = get_caller_address();
             let is_member = self.is_group_member(group_id, caller);
-            let caller = is_member || caller ==   group.creator || self.admin.read() == caller;
+            let caller = is_member || caller == group.creator || self.admin.read() == caller;
             assert(caller, 'not creator, member or admin');
 
             assert(!group.is_paid, 'group is already paid');
@@ -364,9 +364,7 @@ pub mod AutoShare {
                 .emit(
                     Event::GroupUpdateRequested(
                         GroupUpdateRequested {
-                            group_id,
-                            requester: caller,
-                            new_name: new_name.clone(),
+                            group_id, requester: caller, new_name: new_name.clone(),
                         },
                     ),
                 );
@@ -527,12 +525,11 @@ pub mod AutoShare {
             self.has_pending_update.write(group_id, false);
 
             // Emit the GroupUpdated event
-            self
-                .emit(
-                    Event::GroupUpdated(
-                        GroupUpdated { group_id, old_name, new_name },
-                    ),
-                );
+            self.emit(Event::GroupUpdated(GroupUpdated { group_id, old_name, new_name }));
+        }
+
+        fn get_group_balance(self: @ContractState, group_address: ContractAddress) -> u256 {
+            self._check_token_balance_of_child(group_address)
         }
     }
 
