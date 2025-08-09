@@ -1,5 +1,6 @@
 use starknet::{ClassHash, ContractAddress};
 use crate::base::types::{Group, GroupMember, GroupUpdateRequest};
+
 #[starknet::interface]
 pub trait IAutoShare<TContractState> {
     fn create_group(
@@ -34,6 +35,7 @@ pub trait IAutoShare<TContractState> {
     fn approve_group_update(ref self: TContractState, group_id: u256);
     // // fn reject_group_update(ref self: TContractState, group_id: u256);
     fn execute_group_update(ref self: TContractState, group_id: u256);
+    fn setup_child_contract(ref self: TContractState, group_id: u256);
     // fn get_group_update_requests(self: @TContractState) -> Array<GroupUpdateRequest>;
 // fn get_group_update_request(self: @TContractState, group_id: u256) -> GroupUpdateRequest;
 }

@@ -785,3 +785,38 @@ fn test_execute_group_update_no_pending_update() {
     contract_address.execute_group_update(1);
     stop_cheat_caller_address(contract_address.contract_address);
 }
+
+#[test]
+fn test_setup_child_contract() {
+    let token = TOKEN_ADDR();
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let mut members = ArrayTrait::new();
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    let group_address = contract_address.create_group("TestGroup", members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Now call the setup function to configure the child contract
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.setup_child_contract(1); // group_id = 1
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // Verify that the child contract is properly set up by calling get_details_of_child
+    let child_contract = IAutoshareChildDispatcher { contract_address: group_address };
+    let (id, group, group_members, balance, created_at) = child_contract.get_details_of_child();
+    
+    assert(id == 1, 'Wrong group id');
+    assert(group.name == "TestGroup", 'Wrong group name');
+    assert(group_members.len() == 2, 'Wrong number of members');
+    assert(balance == 0, 'Balance should be 0 initially');
+    assert(created_at > 0, 'Created at should be set');
+
+    // assert 
+}

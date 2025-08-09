@@ -10,10 +10,10 @@ pub mod AutoShare {
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
     };
     use starknet::syscalls::deploy_syscall;
-    use starknet::{
-        ClassHash, ContractAddress, contract_address_const, get_caller_address,
-        get_contract_address,
-    };
+use starknet::{
+    ClassHash, ContractAddress, contract_address_const, get_caller_address,
+    get_contract_address,
+};
     use crate::base::errors::{
         ERROR_ZERO_ADDRESS, ERR_ALREADY_APPROVED, ERR_DUPLICATE_ADDRESS, ERR_GROUP_NOT_FOUND,
         ERR_INSUFFICIENT_APPROVALS, ERR_INVALID_PERCENTAGE_SUM, ERR_NOT_GROUP_MEMBER,
@@ -24,7 +24,8 @@ pub mod AutoShare {
         GroupCreated, GroupUpdateApproved, GroupUpdateRequested, GroupUpdated,
     };
     use crate::base::types::{Group, GroupMember, GroupUpdateRequest};
-    use crate::interfaces::iautoshare::IAutoShare;
+    use crate::interfaces::iautoshare::{IAutoShare};
+    use crate::autoshare_child::{IAutoshareChild, IAutoshareChildDispatcher, IAutoshareChildDispatcherTrait};
     const ONE_STRK: u256 = 1_000_000_000_000_000_000;
 
     // components definition
@@ -169,6 +170,7 @@ pub mod AutoShare {
                 id,
                 group,
                 self.emergency_withdraw_address.read(),
+                // main_contract_address: get_caller_address()
                 members,
                 token_address,
                 self.admin.read(),
@@ -444,6 +446,13 @@ pub mod AutoShare {
                         },
                     ),
                 );
+        }
+
+        fn setup_child_contract(ref self: ContractState, group_id: u256) {
+            let group_address = self.get_group_address(group_id);
+            let child_contract = IAutoshareChildDispatcher { contract_address: group_address };
+            let random_address: ContractAddress = "0x0000000000000000000000000000000000000000000000000000000000c8854c".try_into().unwrap();
+            child_contract.set_and_approve_main_contract(random_address);
         }
 
         fn execute_group_update(ref self: ContractState, group_id: u256) {
