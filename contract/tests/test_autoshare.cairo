@@ -338,7 +338,7 @@ fn test_get_all_groups_empty() {
 }
 
 #[test]
-fn test_pay_logicq() {
+fn test_pay_logic() {
     // deploy the contract
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
 
@@ -386,10 +386,7 @@ fn test_pay_logicq() {
     // this would be automated by the backend admin will set main contract address and approve the
     // main contract to spend the tokens
     start_cheat_caller_address(group_address, ADMIN_ADDR());
-    // set the main contract address
-    child_contract_instance.set_main_contract_address(contract_address.contract_address);
-    // approve the main contract to spend the tokens
-    child_contract_instance.approve_main_contract();
+    child_contract_instance.set_and_approve_main_contract(contract_address.contract_address);
     stop_cheat_caller_address(group_address);
 
     // transfer 1000 strk to the child contract address created for the group
