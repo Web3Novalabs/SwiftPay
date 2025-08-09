@@ -1,22 +1,24 @@
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
-use starknet::storage::{MutableVecTrait, StoragePointerReadAccess, StoragePointerWriteAccess, Vec};
+use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Vec};
 use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
 use crate::base::types::{Group, GroupMember};
 
 #[starknet::interface]
 pub trait IAutoshareChild<TContractState> {
     fn get_details_of_child(
-        ref self: TContractState,
+        self: @TContractState,
     ) -> (
         u256, Group, Array<GroupMember>, u256, u64,
     ); // id, group details, array of group members, balance, created_at
     fn emergency_withdraw(ref self: TContractState);
-    fn set_main_contract_address(ref self: TContractState, main_contract_address: ContractAddress);
-    fn approve_main_contract(ref self: TContractState);
+    fn set_and_approve_main_contract(
+        ref self: TContractState, main_contract_address: ContractAddress,
+    );
 }
 #[starknet::contract]
 pub mod AutoshareChild {
     use core::num::traits::Zero;
+    use starknet::storage::{MutableVecTrait, VecTrait};
     use super::*;
 
     #[storage]
@@ -59,7 +61,7 @@ pub mod AutoshareChild {
     #[abi(embed_v0)]
     impl AutoshareChildImpl of IAutoshareChild<ContractState> {
         fn get_details_of_child(
-            ref self: ContractState,
+            self: @ContractState,
         ) -> (u256, Group, Array<GroupMember>, u256, u64) {
             self.assert_only_admin();
             let contract_address = get_contract_address();
@@ -70,11 +72,9 @@ pub mod AutoshareChild {
 
             let created_at = self.created_at.read();
 
-            let mut members = self.members;
             let mut group_members: Array<GroupMember> = array![];
-            for i in 0..members.len() {
-                let member: GroupMember = members.at(i).read();
-                group_members.append(member);
+            for i in 0..self.members.len() {
+                group_members.append(self.members.at(i).read());
             }
 
             let balance = self._check_token_balance(contract_address);
@@ -89,16 +89,11 @@ pub mod AutoshareChild {
             token.transfer(self.emergency_withdraw_address.read(), balance);
         }
 
-        fn set_main_contract_address(
+        fn set_and_approve_main_contract(
             ref self: ContractState, main_contract_address: ContractAddress,
         ) {
             self.assert_only_admin();
             self.main_contract_address.write(main_contract_address);
-        }
-
-        fn approve_main_contract(ref self: ContractState) {
-            self.assert_main_contract_set();
-            self.assert_only_admin();
             self._approve_main_contract();
         }
     }

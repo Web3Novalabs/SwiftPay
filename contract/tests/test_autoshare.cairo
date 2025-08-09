@@ -143,7 +143,7 @@ fn test_create_group_duplicate_address() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup",members, token);
+    contract_address.create_group("TestGroup", members, token);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -338,7 +338,7 @@ fn test_get_all_groups_empty() {
 }
 
 #[test]
-fn test_pay_logicq() {
+fn test_pay_logic() {
     // deploy the contract
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
 
@@ -386,10 +386,7 @@ fn test_pay_logicq() {
     // this would be automated by the backend admin will set main contract address and approve the
     // main contract to spend the tokens
     start_cheat_caller_address(group_address, ADMIN_ADDR());
-    // set the main contract address
-    child_contract_instance.set_main_contract_address(contract_address.contract_address);
-    // approve the main contract to spend the tokens
-    child_contract_instance.approve_main_contract();
+    child_contract_instance.set_and_approve_main_contract(contract_address.contract_address);
     stop_cheat_caller_address(group_address);
 
     // transfer 1000 strk to the child contract address created for the group
@@ -402,9 +399,7 @@ fn test_pay_logicq() {
 
     // get the balance of the child contract
     child_contract_balance = erc20_dispatcher.balance_of(group_address);
-    assert(
-        child_contract_balance == 1_000_000_000_000_000_000_000, 'child balance incorrect',
-    );
+    assert(child_contract_balance == 1_000_000_000_000_000_000_000, 'child balance incorrect');
     let creator_balance_after = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
     assert(
         creator_balance_after == creator_balance_before
@@ -511,7 +506,7 @@ fn test_request_group_update_invalid_percentage() {
     new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 30 }); // Total: 80%
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    contract_address.request_group_update(1, "UpdatedGroup",new_members);
+    contract_address.request_group_update(1, "UpdatedGroup", new_members);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 

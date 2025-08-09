@@ -50,7 +50,7 @@ pub mod AutoShare {
         has_pending_update: Map<u256, bool>, // group_id -> has_pending_update
         child_contract_class_hash: ClassHash,
         group_addresses: Map<u256, ContractAddress>, // group_id -> child_contract_address
-        group_addresses_map:Map<ContractAddress,u256>, // child_contract_address ->  group_id
+        group_addresses_map: Map<ContractAddress, u256>, // child_contract_address ->  group_id
         emergency_withdraw_address: ContractAddress,
     }
 
@@ -110,7 +110,7 @@ pub mod AutoShare {
             assert(allowed_amount >= ONE_STRK, INSUFFICIENT_ALLOWANCE);
         }
 
-        fn _get_group_id(self: @ContractState,address: ContractAddress)-> u256{
+        fn _get_group_id(self: @ContractState, address: ContractAddress) -> u256 {
             let group_id = self.group_addresses_map.read(address);
             group_id
         }
@@ -123,7 +123,7 @@ pub mod AutoShare {
             name: ByteArray,
             members: Array<GroupMember>,
             token_address: ContractAddress,
-        ) {
+        ) -> ContractAddress {
             assert(get_caller_address() != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
             let member_count: usize = members.len();
             assert(member_count >= 2, 'member is less than 2');
@@ -180,7 +180,7 @@ pub mod AutoShare {
             )
                 .unwrap();
             self.group_addresses.write(id, contract_address_for_group);
-            self.group_addresses_map.write(contract_address_for_group,id);
+            self.group_addresses_map.write(contract_address_for_group, id);
 
             self
                 .emit(
@@ -188,6 +188,8 @@ pub mod AutoShare {
                         GroupCreated { group_id: id, creator: get_caller_address(), name },
                     ),
                 );
+
+            contract_address_for_group
         }
 
         fn get_group(self: @ContractState, group_id: u256) -> Group {
@@ -273,11 +275,11 @@ pub mod AutoShare {
         }
 
         fn pay(ref self: ContractState, group_address: ContractAddress) {
-            let group_id:u256 = self._get_group_id(group_address);
+            let group_id: u256 = self._get_group_id(group_address);
             let mut group: Group = self.get_group(group_id);
             let caller = get_caller_address();
             let is_member = self.is_group_member(group_id, caller);
-            let caller = is_member || caller ==   group.creator || self.admin.read() == caller;
+            let caller = is_member || caller == group.creator || self.admin.read() == caller;
             assert(caller, 'not creator, member or admin');
 
             assert(!group.is_paid, 'group is already paid');
@@ -286,10 +288,13 @@ pub mod AutoShare {
             let group_members_vec = self.group_members.entry(group_id);
             let group_address = self.get_group_address(group_id);
             let amount = self._check_token_balance_of_child(group_address);
+            println!("amount {:?}", amount); // 1000000000000000000 = 1*10^18
             assert(amount > 0, 'no payment made');
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
-                let members_money = amount * member.percentage.try_into().unwrap() / 100;
+                let members_money: u256 = amount * member.percentage.try_into().unwrap() / 100;
+                println!("members_money {:?}", members_money);
+                println!("member.addr {:?}", member.addr);
                 // now transfer from group address to member address
                 let token = IERC20Dispatcher { contract_address: self.token_address.read() };
                 token.transfer_from(group_address, member.addr, members_money);
@@ -364,9 +369,7 @@ pub mod AutoShare {
                 .emit(
                     Event::GroupUpdateRequested(
                         GroupUpdateRequested {
-                            group_id,
-                            requester: caller,
-                            new_name: new_name.clone(),
+                            group_id, requester: caller, new_name: new_name.clone(),
                         },
                     ),
                 );
@@ -527,12 +530,7 @@ pub mod AutoShare {
             self.has_pending_update.write(group_id, false);
 
             // Emit the GroupUpdated event
-            self
-                .emit(
-                    Event::GroupUpdated(
-                        GroupUpdated { group_id, old_name, new_name },
-                    ),
-                );
+            self.emit(Event::GroupUpdated(GroupUpdated { group_id, old_name, new_name }));
         }
     }
 

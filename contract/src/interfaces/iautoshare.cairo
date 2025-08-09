@@ -7,7 +7,7 @@ pub trait IAutoShare<TContractState> {
         name: ByteArray,
         members: Array<GroupMember>,
         token_address: ContractAddress,
-    );
+    ) -> ContractAddress;
 
     fn get_group(self: @TContractState, group_id: u256) -> Group;
     fn get_group_address(self: @TContractState, group_id: u256) -> ContractAddress;
