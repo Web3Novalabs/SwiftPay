@@ -860,8 +860,8 @@ fn test_get_group_balance_after_pay_to_group_members() {
     // Set main contract address in child contract and approve it
     let child_dispatcher = IAutoshareChildDispatcher { contract_address: group_address };
     start_cheat_caller_address(group_address, ADMIN_ADDR());
-    child_dispatcher.set_main_contract_address(contract_address.contract_address);
-    child_dispatcher.approve_main_contract();
+    child_dispatcher.set_and_approve_main_contract(contract_address.contract_address);
+    // child_dispatcher.approve_main_contract();
     stop_cheat_caller_address(group_address);
 
     // pay to group members
