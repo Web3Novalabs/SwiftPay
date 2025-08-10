@@ -7,7 +7,7 @@ pub trait IAutoShare<TContractState> {
         name: ByteArray,
         members: Array<GroupMember>,
         token_address: ContractAddress,
-    );
+    ) -> ContractAddress;
 
     fn get_group(self: @TContractState, group_id: u256) -> Group;
     fn get_group_address(self: @TContractState, group_id: u256) -> ContractAddress;
@@ -24,6 +24,7 @@ pub trait IAutoShare<TContractState> {
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
 
     fn pay(ref self: TContractState, group_address: ContractAddress);
+    fn get_group_balance(self: @TContractState, group_address: ContractAddress) -> u256;
 
     fn request_group_update(
         ref self: TContractState,

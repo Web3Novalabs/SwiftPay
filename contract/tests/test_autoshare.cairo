@@ -74,8 +74,8 @@ fn deploy_autoshare_contract() -> (IAutoShareDispatcher, IERC20Dispatcher) {
 
 #[test]
 fn test_create_group_success() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
     let mut members = ArrayTrait::new();
     let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
     assert(contract_balance_before == 0, 'balance not up to date');
@@ -100,8 +100,8 @@ fn test_child_contract_creation() {}
 #[test]
 #[should_panic(expected: ('cummulative share not 100%',))]
 fn test_create_group_invalid_percentage() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     erc20_dispatcher
@@ -117,8 +117,8 @@ fn test_create_group_invalid_percentage() {
 #[test]
 #[should_panic(expected: ('member is less than 2',))]
 fn test_create_group_too_few_members() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     erc20_dispatcher
@@ -133,8 +133,8 @@ fn test_create_group_too_few_members() {
 #[test]
 #[should_panic(expected: ('list contain dublicate address',))]
 fn test_create_group_duplicate_address() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     erc20_dispatcher
@@ -143,15 +143,15 @@ fn test_create_group_duplicate_address() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup",members, token);
+    contract_address.create_group("TestGroup", members, token);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
 
 #[test]
 fn test_get_group_success() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
     let mut members = ArrayTrait::new();
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     erc20_dispatcher
@@ -269,8 +269,8 @@ fn test_token_data() {
 
 #[test]
 fn test_get_all_groups_and_get_groups_by_paid() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Approve and create 3 groups
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
@@ -338,7 +338,7 @@ fn test_get_all_groups_empty() {
 }
 
 #[test]
-fn test_pay_logicq() {
+fn test_pay_logic() {
     // deploy the contract
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
 
@@ -386,10 +386,7 @@ fn test_pay_logicq() {
     // this would be automated by the backend admin will set main contract address and approve the
     // main contract to spend the tokens
     start_cheat_caller_address(group_address, ADMIN_ADDR());
-    // set the main contract address
-    child_contract_instance.set_main_contract_address(contract_address.contract_address);
-    // approve the main contract to spend the tokens
-    child_contract_instance.approve_main_contract();
+    child_contract_instance.set_and_approve_main_contract(contract_address.contract_address);
     stop_cheat_caller_address(group_address);
 
     // transfer 1000 strk to the child contract address created for the group
@@ -402,9 +399,7 @@ fn test_pay_logicq() {
 
     // get the balance of the child contract
     child_contract_balance = erc20_dispatcher.balance_of(group_address);
-    assert(
-        child_contract_balance == 1_000_000_000_000_000_000_000, 'child balance incorrect',
-    );
+    assert(child_contract_balance == 1_000_000_000_000_000_000_000, 'child balance incorrect');
     let creator_balance_after = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
     assert(
         creator_balance_after == creator_balance_before
@@ -438,8 +433,8 @@ fn test_pay_logicq() {
 #[test]
 #[should_panic(expected: ('Group not found',))]
 fn test_request_group_update_group_not_found() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Setup: Approve tokens
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
@@ -460,8 +455,8 @@ fn test_request_group_update_group_not_found() {
 #[test]
 #[should_panic(expected: ('caller is not creator',))]
 fn test_request_group_update_not_creator() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Create a group
     let mut members = ArrayTrait::new();
@@ -489,8 +484,8 @@ fn test_request_group_update_not_creator() {
 #[test]
 #[should_panic(expected: ('total percentage must be 100',))]
 fn test_request_group_update_invalid_percentage() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Create a group
     let mut members = ArrayTrait::new();
@@ -511,15 +506,15 @@ fn test_request_group_update_invalid_percentage() {
     new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 30 }); // Total: 80%
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    contract_address.request_group_update(1, "UpdatedGroup",new_members);
+    contract_address.request_group_update(1, "UpdatedGroup", new_members);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
 #[test]
 #[should_panic(expected: ('list contain duplicate address',))]
 fn test_request_group_update_duplicate_address() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Setup: Create a group
     let mut members = ArrayTrait::new();
@@ -547,8 +542,8 @@ fn test_request_group_update_duplicate_address() {
 #[test]
 // #[should_panic(expected: ('caller is not a group member',))]
 fn test_request_group_update_not_member() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     erc20_dispatcher.transfer(USER3_ADDR(), 100_000_000_000_000_000_000_000_000);
@@ -579,8 +574,8 @@ fn test_request_group_update_not_member() {
 
 #[test]
 fn test_approve_group_update_success() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // create a group
     let mut members = ArrayTrait::new();
@@ -639,8 +634,8 @@ fn test_approve_group_update_success() {
 
 #[test]
 fn test_execute_group_update_success() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Create a group with creator as member
     let mut members = ArrayTrait::new();
@@ -693,8 +688,8 @@ fn test_execute_group_update_success() {
 #[test]
 #[should_panic(expected: ('caller is not the group creator',))]
 fn test_execute_group_update_not_creator() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Create a group
     let mut members = ArrayTrait::new();
@@ -735,8 +730,8 @@ fn test_execute_group_update_not_creator() {
 #[test]
 #[should_panic(expected: ('no pending updt for this group',))]
 fn test_execute_group_update_not_completed() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Create a group
     let mut members = ArrayTrait::new();
@@ -769,8 +764,8 @@ fn test_execute_group_update_not_completed() {
 #[test]
 #[should_panic(expected: ('update request not completed',))]
 fn test_execute_group_update_no_pending_update() {
-    let token = TOKEN_ADDR();
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
 
     // Create a group
     let mut members = ArrayTrait::new();
@@ -789,4 +784,93 @@ fn test_execute_group_update_no_pending_update() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     contract_address.execute_group_update(1);
     stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+fn test_get_group_balance() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", members, token);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    let group_address = contract_address.get_group_address(1);
+    let group_balance_before_transfer = contract_address.get_group_balance(group_address);
+    print!("group_balance: _________ {} _______", group_balance_before_transfer);
+
+    assert(group_balance_before_transfer == 0, 'Group balance should be 0');
+
+    // transfer token to group
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.transfer(group_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    let group_balance_after_transfer = contract_address.get_group_balance(group_address);
+    print!("group_balance_after_transfer: _________ {} _______", group_balance_after_transfer);
+    assert(
+        group_balance_after_transfer == 100_000_000_000_000_000_000_000_000,
+        'Group balance should be 100',
+    );
+}
+
+#[test]
+fn test_get_group_balance_after_pay_to_group_members() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    let group_address = contract_address.get_group_address(1);
+    let group_balance_before_transfer = contract_address.get_group_balance(group_address);
+    print!("group_balance: _________ {} _______", group_balance_before_transfer);
+    assert(group_balance_before_transfer == 0, 'Group balance should be 0');
+
+    // transfer token to group
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    let group_balance_after_transfer = contract_address.get_group_balance(group_address);
+    print!("group_balance_after_transfer: _________ {} _______", group_balance_after_transfer);
+    assert(
+        group_balance_after_transfer == 1_000_000_000_000_000_000_000_000_000,
+        'Group balance should be 100000',
+    );
+
+    // Set main contract address in child contract and approve it
+    let child_dispatcher = IAutoshareChildDispatcher { contract_address: group_address };
+    start_cheat_caller_address(group_address, ADMIN_ADDR());
+    child_dispatcher.set_and_approve_main_contract(contract_address.contract_address);
+    // child_dispatcher.approve_main_contract();
+    stop_cheat_caller_address(group_address);
+
+    // pay to group members
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.pay(group_address);
+    print!("pay to group members completed ______________");
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    let group_balance_after_pay = contract_address.get_group_balance(group_address);
+    print!("group_balance_after_pay: _________ {} _______", group_balance_after_pay);
+    assert(group_balance_after_pay == 0, 'Group balance should be 0');
 }

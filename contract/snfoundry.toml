@@ -17,3 +17,8 @@ url = "https://starknet-sepolia.public.blastapi.io/rpc/v0_8"
 
 [sncast.default]
 account = "swiftpay"
+
+[sncast.swift]
+account = "swfit_pro"
+accounts-file = "/Users/admin/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_8/Z-bu_aTuwBtbfy7YQ4vOS2ZPQgWJpZdw"
