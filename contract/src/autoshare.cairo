@@ -11,7 +11,7 @@ pub mod AutoShare {
     };
     use starknet::syscalls::deploy_syscall;
     use starknet::{
-        ClassHash, ContractAddress, contract_address_const, get_caller_address,
+        ClassHash, ContractAddress, contract_address_const, get_block_timestamp, get_caller_address,
         get_contract_address,
     };
     use crate::autoshare_child::{
@@ -24,7 +24,7 @@ pub mod AutoShare {
         ERR_UPDATE_REQUEST_NOT_FOUND, INSUFFICIENT_ALLOWANCE, INSUFFICIENT_STRK_BALANCE,
     };
     use crate::base::events::{
-        GroupCreated, GroupUpdateApproved, GroupUpdateRequested, GroupUpdated,
+        GroupCreated, GroupPaid, GroupUpdateApproved, GroupUpdateRequested, GroupUpdated,
     };
     use crate::base::types::{Group, GroupMember, GroupUpdateRequest};
     use crate::interfaces::iautoshare::IAutoShare;
@@ -66,6 +66,7 @@ pub mod AutoShare {
         GroupUpdated: GroupUpdated,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
+        GroupPaid: GroupPaid,
     }
 
     #[constructor]
@@ -191,7 +192,12 @@ pub mod AutoShare {
             self
                 .emit(
                     Event::GroupCreated(
-                        GroupCreated { group_id: id, creator: get_caller_address(), name },
+                        GroupCreated {
+                            group_address: contract_address_for_group,
+                            group_id: id,
+                            creator: get_caller_address(),
+                            name,
+                        },
                     ),
                 );
 
@@ -291,17 +297,31 @@ pub mod AutoShare {
             let amount = self._check_token_balance_of_child(group_address);
             println!("amount {:?}", amount); // 1000000000000000000 = 1*10^18
             assert(amount > 0, 'no payment made');
+            let mut members_arr: Array<GroupMember> = ArrayTrait::new();
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
                 let members_money: u256 = amount * member.percentage.try_into().unwrap() / 100;
-                println!("members_money {:?}", members_money);
-                println!("member.addr {:?}", member.addr);
+                // println!("members_money {:?}", members_money);
+                // println!("member.addr {:?}", member.addr);
                 // now transfer from group address to member address
+                members_arr.append(member);
                 let token = IERC20Dispatcher { contract_address: self.token_address.read() };
                 token.transfer_from(group_address, member.addr, members_money);
             }
             group.is_paid = true;
             self.groups.write(group_id, group);
+            self
+                .emit(
+                    Event::GroupPaid(
+                        GroupPaid {
+                            group_id: group_id,
+                            amount: amount,
+                            paid_by: get_caller_address(),
+                            paid_at: get_block_timestamp(),
+                            members: members_arr,
+                        },
+                    ),
+                );
         }
 
         fn request_group_update(
