@@ -295,7 +295,7 @@ pub mod AutoShare {
             let group_members_vec = self.group_members.entry(group_id);
             let group_address = self.get_group_address(group_id);
             let amount = self._check_token_balance_of_child(group_address);
-            println!("amount {:?}", amount); // 1000000000000000000 = 1*10^18
+            // println!("amount {:?}", amount); // 1000000000000000000 = 1*10^18
             assert(amount > 0, 'no payment made');
             let mut members_arr: Array<GroupMember> = ArrayTrait::new();
             for member in 0..group_members_vec.len() {
