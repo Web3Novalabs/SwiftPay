@@ -14,6 +14,7 @@ pub trait IAutoshareChild<TContractState> {
     fn set_and_approve_main_contract(
         ref self: TContractState, main_contract_address: ContractAddress,
     );
+    fn get_main_contract_address(self: @TContractState) -> ContractAddress;
 }
 #[starknet::contract]
 pub mod AutoshareChild {
@@ -92,9 +93,13 @@ pub mod AutoshareChild {
         fn set_and_approve_main_contract(
             ref self: ContractState, main_contract_address: ContractAddress,
         ) {
-            self.assert_only_admin();
+            assert(self.main_contract_address.read().is_zero(), 'Main contract already set');
             self.main_contract_address.write(main_contract_address);
             self._approve_main_contract();
+        }
+
+        fn get_main_contract_address(self: @ContractState) -> ContractAddress {
+            self.main_contract_address.read()
         }
     }
 

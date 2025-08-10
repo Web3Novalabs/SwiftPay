@@ -90,8 +90,15 @@ fn test_create_group_success() {
     contract_address.create_group("TestGroup", members, token);
     stop_cheat_caller_address(contract_address.contract_address);
 
+    let group_address = contract_address.get_group_address(1);
+
     let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
     assert(contract_balance_after == 1000000000000000000, 'balance not up to date');
+
+    // asset that the main contract has been set in the child contract
+    let child_contract_instance = IAutoshareChildDispatcher { contract_address: group_address };
+    let main_contract_address = child_contract_instance.get_main_contract_address();
+    assert(main_contract_address == contract_address.contract_address, 'main contract not set');
 }
 
 #[test]
@@ -379,15 +386,6 @@ fn test_pay_logic() {
     // assert the balance is default 0
     let mut child_contract_balance = erc20_dispatcher.balance_of(group_address);
     assert(child_contract_balance == 0, 'child not up to date');
-
-    // instantiate the child contract
-    let child_contract_instance = IAutoshareChildDispatcher { contract_address: group_address };
-
-    // this would be automated by the backend admin will set main contract address and approve the
-    // main contract to spend the tokens
-    start_cheat_caller_address(group_address, ADMIN_ADDR());
-    child_contract_instance.set_and_approve_main_contract(contract_address.contract_address);
-    stop_cheat_caller_address(group_address);
 
     // transfer 1000 strk to the child contract address created for the group
     //(indexer would watch for this and trigger the pay function)
@@ -856,13 +854,6 @@ fn test_get_group_balance_after_pay_to_group_members() {
         group_balance_after_transfer == 1_000_000_000_000_000_000_000_000_000,
         'Group balance should be 100000',
     );
-
-    // Set main contract address in child contract and approve it
-    let child_dispatcher = IAutoshareChildDispatcher { contract_address: group_address };
-    start_cheat_caller_address(group_address, ADMIN_ADDR());
-    child_dispatcher.set_and_approve_main_contract(contract_address.contract_address);
-    // child_dispatcher.approve_main_contract();
-    stop_cheat_caller_address(group_address);
 
     // pay to group members
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());

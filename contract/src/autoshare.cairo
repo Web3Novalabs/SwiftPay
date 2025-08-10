@@ -14,6 +14,9 @@ pub mod AutoShare {
         ClassHash, ContractAddress, contract_address_const, get_caller_address,
         get_contract_address,
     };
+    use crate::autoshare_child::{
+        IAutoshareChild, IAutoshareChildDispatcher, IAutoshareChildDispatcherTrait,
+    };
     use crate::base::errors::{
         ERROR_ZERO_ADDRESS, ERR_ALREADY_APPROVED, ERR_DUPLICATE_ADDRESS, ERR_GROUP_NOT_FOUND,
         ERR_INSUFFICIENT_APPROVALS, ERR_INVALID_PERCENTAGE_SUM, ERR_NOT_GROUP_MEMBER,
@@ -181,7 +184,10 @@ pub mod AutoShare {
                 .unwrap();
             self.group_addresses.write(id, contract_address_for_group);
             self.group_addresses_map.write(contract_address_for_group, id);
-
+            let child_contract = IAutoshareChildDispatcher {
+                contract_address: contract_address_for_group,
+            };
+            child_contract.set_and_approve_main_contract(get_contract_address());
             self
                 .emit(
                     Event::GroupCreated(
@@ -241,7 +247,7 @@ pub mod AutoShare {
             let mut group: Array<Group> = ArrayTrait::new();
             let count = self.group_count.read();
             let len = count;
-           
+
             for i in 1..=len {
                 let group_member = self.group_members.entry(i);
                 for member in 0..group_member.len() {
