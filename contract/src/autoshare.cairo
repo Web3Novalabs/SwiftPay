@@ -238,22 +238,17 @@ pub mod AutoShare {
         fn get_address_groups(self: @ContractState, address: ContractAddress) -> Array<Group> {
             let mut group: Array<Group> = ArrayTrait::new();
             let count = self.group_count.read();
-            print!("count {}", count);
-            let len: u64 = count.try_into().unwrap();
-            let mut i: u64 = 1;
-            while i <= len {
-                let m: u256 = i.try_into().unwrap();
-
-                let group_member = self.group_members.entry(m);
-
+            let len = count;
+           
+            for i in 1..=len {
+                let group_member = self.group_members.entry(i);
                 for member in 0..group_member.len() {
                     let vec = group_member.at(member).read();
                     if vec.addr == address {
-                        let has_share_in_group = self.groups.read(m);
+                        let has_share_in_group = self.groups.read(i);
                         group.append(has_share_in_group);
                     }
                 }
-                i = i + 1;
             }
             group
         }
