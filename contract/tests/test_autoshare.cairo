@@ -99,6 +99,13 @@ fn test_create_group_success() {
     let child_contract_instance = IAutoshareChildDispatcher { contract_address: group_address };
     let main_contract_address = child_contract_instance.get_main_contract_address();
     assert(main_contract_address == contract_address.contract_address, 'main contract not set');
+
+    start_cheat_caller_address(contract_address.contract_address, ADMIN_ADDR());
+    contract_address.widthdraw();
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
 }
 
 #[test]

@@ -6,11 +6,18 @@ import { sepolia } from "@starknet-react/chains";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 // import { SWIFTPAY_CONTRACT_ADDRESS, writeContractWithStarknetJs } from "@/hooks/useBlockchain";
 import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
-import { byteArray, cairo, CallData, Contract } from "starknet";
+import { byteArray, cairo, CallData, Contract, PaymasterDetails } from "starknet";
 import { myProvider } from "@/utils/contract";
 
 export const SWIFTPAY_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
+
+  export const STRK_SEPOLIA =
+    "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+  export const USDC_SEPOLIA =
+    "0x53b40a647cedfca6ca84f542a0fe36736031905a9639a7f19a3c1e66bfd5080";
+  export const ETH_SEPOLIA =
+    "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
 
 interface GroupMember {
   addr: string;
@@ -67,28 +74,28 @@ export default function CreateGroupForm() {
   // Contract Call Array
 
   const [resultHash,setResultHash] = useState("") 
-  const calls = useMemo(() => {
-    // Validate the input values before proceeding
-    const isInputValid =
-      formData.members && formData.name && formData.tokenAddress;
-    if (!isInputValid) return [];
+  // const calls = useMemo(() => {
+  //   // Validate the input values before proceeding
+  //   const isInputValid =
+  //     formData.members && formData.name && formData.tokenAddress;
+  //   if (!isInputValid) return [];
 
-    const populatedCall = contract?.populateTransaction["create_group"](
-      CallData.compile([
-        byteArray.byteArrayFromString(formData.name),
-        formData.members,
-        formData.tokenAddress,
-      ])
-    );
+  //   const populatedCall = contract?.populateTransaction["create_group"](
+  //     CallData.compile([
+  //       byteArray.byteArrayFromString(formData.name),
+  //       formData.members,
+  //       formData.tokenAddress,
+  //     ])
+  //   );
 
-    // Ensure calls is always an array or undefined
-    return populatedCall ? [populatedCall] : undefined;
-  }, [
-    contract,
-    formData.tokenAddress,
-    formData.members,
-    formData.name
-  ]);
+  //   // Ensure calls is always an array or undefined
+  //   return populatedCall ? [populatedCall] : undefined;
+  // }, [
+  //   contract,
+  //   formData.tokenAddress,
+  //   formData.members,
+  //   formData.name
+  // ]);
 
   const { data, error } = useTransactionReceipt({
     hash: resultHash,
@@ -231,8 +238,8 @@ export default function CreateGroupForm() {
         // // let k = await myProvider.getAddressFromStarkName(result.transaction_hash)
         // // let m = await myProvider.getTransactionReceipt(result.transaction_hash);
         // let f = await myProvider.getTransactionReceipt(result.transaction_hash);
-        result.transaction_hash;
-        let fetchValue;
+        // result.transaction_hash;
+        // let fetchValue;
         // if (
         //   f.value &&
         //   typeof f.value === "object" &&
@@ -251,6 +258,42 @@ export default function CreateGroupForm() {
         // });
         // console.log(result)
         // await sendAsync();
+
+        // const calls = {
+        //   contractAddress: SWIFTPAY_CONTRACT_ADDRESS,
+        //   entrypoint: "create_group",
+        //   calldata: CallData.compile([
+        //     byteArray.byteArrayFromString(formData.name),
+        //     formData.members,
+        //     formData.tokenAddress,
+        //   ]),
+        // };
+
+        // const gasToken = ETH_SEPOLIA;
+
+        // const feeDetails: PaymasterDetails = {
+        //   feeMode: {
+        //     mode: "sponsored",
+        //   },
+        // };
+
+        // const feeEstimation = await account?.estimatePaymasterTransactionFee(
+        //   [calls],
+        //   feeDetails
+        // );
+
+        // const result = await account?.executePaymasterTransaction(
+        //   [calls],
+        //   feeDetails,
+        //   feeEstimation?.suggested_max_fee_in_gas_token
+        // );
+
+        const status = await myProvider.waitForTransaction(
+          result?.transaction_hash as string
+        );
+
+        console.log(result,status);
+
         setResultHash(result.transaction_hash)
         // console.log({ writeData });
       }
