@@ -25,10 +25,11 @@ pub mod AutoShare {
     };
     use crate::base::events::{
         GroupCreated, GroupPaid, GroupUpdateApproved, GroupUpdateRequested, GroupUpdated,
+        SubscriptionTopped,
     };
     use crate::base::types::{Group, GroupMember, GroupUpdateRequest};
     use crate::interfaces::iautoshare::IAutoShare;
-    const ONE_STRK: u256 = 1_000_000_000_000_000_000;
+    // const ONE_STRK: u256 = 1_000_000_000_000_000_000;
 
     // components definition
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
@@ -42,6 +43,8 @@ pub mod AutoShare {
         group_members: Map<u256, Vec<GroupMember>>,
         group_count: u256,
         admin: ContractAddress,
+        group_usage_fee: u256,
+        group_update_fee: u256,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         token_address: ContractAddress,
@@ -55,6 +58,17 @@ pub mod AutoShare {
         group_addresses: Map<u256, ContractAddress>, // group_id -> child_contract_address
         group_addresses_map: Map<ContractAddress, u256>, // child_contract_address ->  group_id
         emergency_withdraw_address: ContractAddress,
+        // stores all paid usage count for a group
+
+        group_usage_paid_history: Map<
+            u256, Vec<u256>,
+        >, // group_id -> paid_usage_count eg if the user paid for 20 usages then its going to be 20
+        group_usage_paid: Map<
+            u256, u256,
+        >, // group_id -> paid_usage_count eg if the user paid for 20 usages then its going to be 20
+        usage_count: Map<
+            u256, u256,
+        > // group_id to the usage_count rn, ie how many usages he has remaining
     }
 
     #[event]
@@ -67,6 +81,7 @@ pub mod AutoShare {
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
         GroupPaid: GroupPaid,
+        SubscriptionTopped: SubscriptionTopped,
     }
 
     #[constructor]
@@ -84,6 +99,8 @@ pub mod AutoShare {
         self.token_address.write(token_address);
         self.emergency_withdraw_address.write(emergency_withdraw_address);
         self.child_contract_class_hash.write(child_contract_class_hash);
+        self.group_usage_fee.write(1_000_000_000_000_000_000);
+        self.group_update_fee.write(1_000_000_000_000_000_000);
     }
 
     #[generate_trait]
@@ -104,14 +121,16 @@ pub mod AutoShare {
         fn assert_group_creation_fee_requirements(
             self: @ContractState,
             token: IERC20Dispatcher,
+            amount: Option<u256>,
             creator: ContractAddress,
             contract_address: ContractAddress,
         ) {
             let creator_balance = token.balance_of(creator);
-            assert(creator_balance >= ONE_STRK, INSUFFICIENT_STRK_BALANCE);
+            let amount = amount.unwrap_or(self.group_usage_fee.read());
+            assert(creator_balance >= amount, INSUFFICIENT_STRK_BALANCE);
 
             let allowed_amount = token.allowance(creator, contract_address);
-            assert(allowed_amount >= ONE_STRK, INSUFFICIENT_ALLOWANCE);
+            assert(allowed_amount >= amount, INSUFFICIENT_ALLOWANCE);
         }
 
         fn _get_group_id(self: @ContractState, address: ContractAddress) -> u256 {
@@ -127,6 +146,7 @@ pub mod AutoShare {
             name: ByteArray,
             members: Array<GroupMember>,
             token_address: ContractAddress,
+            usage_count: u256,
         ) -> ContractAddress {
             assert(get_caller_address() != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
             let member_count: usize = members.len();
@@ -164,8 +184,9 @@ pub mod AutoShare {
                 self.group_members.entry(id).push(members.at(i).clone());
                 i += 1;
             }
-            // Collect pool creation fee (1 STRK)
-            self._collect_group_creation_fee(caller);
+            // Collect pool creation fee based on how much we are charging for the group usage
+            let fee = self.get_group_usage_amount(usage_count);
+            self._collect_group_creation_fee(caller, fee);
             self.group_count.write(id);
 
             let mut constructor_calldata: Array<felt252> = array![];
@@ -189,6 +210,9 @@ pub mod AutoShare {
                 contract_address: contract_address_for_group,
             };
             child_contract.set_and_approve_main_contract(get_contract_address());
+            self.usage_count.write(id, usage_count);
+            self.group_usage_paid_history.entry(id).push(usage_count);
+            self.group_usage_paid.entry(id).write(usage_count);
             self
                 .emit(
                     Event::GroupCreated(
@@ -220,6 +244,72 @@ pub mod AutoShare {
                 i = i + 1;
             }
             groups
+        }
+
+
+        fn top_subscription(
+            ref self: ContractState, group_id: u256, new_planned_usage_count: u256,
+        ) {
+            let mut group: Group = self.get_group(group_id);
+            let caller = get_caller_address();
+            let is_member = self.is_group_member(group_id, caller);
+            let caller = is_member || caller == group.creator;
+            assert(caller, 'Only creator or admin');
+            let mut usage_count_remaining = self.usage_count.entry(group_id).read();
+            let new_planned_usage_count_to_write = usage_count_remaining + new_planned_usage_count;
+            self.group_usage_paid.entry(group_id).write(new_planned_usage_count_to_write);
+            self.usage_count.entry(group_id).write(new_planned_usage_count_to_write);
+            self.group_usage_paid_history.entry(group_id).push(new_planned_usage_count);
+            usage_count_remaining = self.usage_count.entry(group_id).read();
+            self
+                .emit(
+                    Event::SubscriptionTopped(
+                        SubscriptionTopped { group_id, usage_count: usage_count_remaining },
+                    ),
+                )
+        }
+
+        fn get_group_usage_fee(self: @ContractState) -> u256 {
+            self.group_usage_fee.read()
+        }
+
+        fn set_group_usage_fee(ref self: ContractState, group_usage_fee: u256) {
+            self.assert_only_admin();
+            self.group_usage_fee.write(group_usage_fee);
+        }
+
+        fn get_group_update_fee(self: @ContractState) -> u256 {
+            self.group_update_fee.read()
+        }
+
+        fn set_group_update_fee(ref self: ContractState, group_update_fee: u256) {
+            self.assert_only_admin();
+            self.group_update_fee.write(group_update_fee);
+        }
+
+        fn get_group_usage_paid_history(self: @ContractState, group_id: u256) -> Array<u256> {
+            let mut arr_usage_paid = ArrayTrait::new();
+            let group_usage_paid_history_storage = self.group_usage_paid_history.entry(group_id);
+            for i in 0..group_usage_paid_history_storage.len() {
+                let usage_count = group_usage_paid_history_storage.at(i).read();
+                arr_usage_paid.append(usage_count);
+            }
+            arr_usage_paid
+        }
+
+        fn get_group_usage_paid(self: @ContractState, group_id: u256) -> u256 {
+            let group_usage_paid_storage = self.group_usage_paid.entry(group_id);
+            group_usage_paid_storage.read()
+        }
+
+        fn get_group_usage_count(self: @ContractState, group_id: u256) -> u256 {
+            let group_usage_count_storage = self.usage_count.entry(group_id);
+            group_usage_count_storage.read()
+        }
+
+        fn get_group_usage_amount(self: @ContractState, usage_count: u256) -> u256 {
+            let group_usage_amount = usage_count * self.group_usage_fee.read();
+            group_usage_amount
         }
 
         // Returns all groups where is_paid matches the argument
@@ -288,8 +378,10 @@ pub mod AutoShare {
             let is_member = self.is_group_member(group_id, caller);
             let caller = is_member || caller == group.creator || self.admin.read() == caller;
             assert(caller, 'not creator, member or admin');
-
-            assert(!group.is_paid, 'group is already paid');
+            let mut usage_count = self.usage_count.read(group_id);
+            if usage_count == 0 {
+                assert(!true, 'Max Usage Renew Subscription');
+            }
             assert(group.id != 0, 'group id is 0');
             // removed the logic where caller is the creator
             let group_members_vec = self.group_members.entry(group_id);
@@ -310,6 +402,9 @@ pub mod AutoShare {
             }
             group.is_paid = true;
             self.groups.write(group_id, group);
+            // once paid, we decrement the planned usage count
+            usage_count -= 1;
+            self.usage_count.write(group_id, usage_count);
             self
                 .emit(
                     Event::GroupPaid(
@@ -319,6 +414,7 @@ pub mod AutoShare {
                             paid_by: get_caller_address(),
                             paid_at: get_block_timestamp(),
                             members: members_arr,
+                            usage_count: usage_count,
                         },
                     ),
                 );
@@ -601,10 +697,13 @@ pub mod AutoShare {
 
             // Check update fee requirements
             let _contract_address = get_contract_address();
-            self.assert_group_creation_fee_requirements(strk_token, requester, _contract_address);
+            self
+                .assert_group_creation_fee_requirements(
+                    strk_token, None, requester, _contract_address,
+                );
 
             // Transfer the update fee from requester to the contract
-            strk_token.transfer_from(requester, _contract_address, ONE_STRK);
+            strk_token.transfer_from(requester, _contract_address, self.group_update_fee.read());
         }
 
         fn get_update_request_new_members(
@@ -625,16 +724,21 @@ pub mod AutoShare {
         }
 
         // Collects the group creation fee from the creator.
-        fn _collect_group_creation_fee(ref self: ContractState, creator: ContractAddress) {
+        fn _collect_group_creation_fee(
+            ref self: ContractState, creator: ContractAddress, amount: u256,
+        ) {
             // Retrieve the STRK token contract
             let strk_token = IERC20Dispatcher { contract_address: self.token_address.read() };
 
             // Check group creation fee requirements using SecurityTrait
             let _contract_address = get_contract_address();
-            self.assert_group_creation_fee_requirements(strk_token, creator, _contract_address);
+            self
+                .assert_group_creation_fee_requirements(
+                    strk_token, Some(amount), creator, _contract_address,
+                );
 
             // Transfer the pool creation fee from creator to the contract
-            strk_token.transfer_from(creator, _contract_address, ONE_STRK);
+            strk_token.transfer_from(creator, _contract_address, amount);
         }
 
         fn _check_token_allowance(ref self: ContractState, spender: ContractAddress, amount: u256) {
