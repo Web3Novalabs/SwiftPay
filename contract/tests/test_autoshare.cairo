@@ -376,11 +376,9 @@ fn test_pay_logic() {
         GroupMember { addr: USER1_ADDR(), percentage: 60 },
         GroupMember { addr: USER2_ADDR(), percentage: 40 },
     ];
-    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
     // create the group - depreciated feature of amount 1000 will not be used with child contract
     contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 2);
-    stop_cheat_caller_address(erc20_dispatcher.contract_address);
-
+    stop_cheat_caller_address(contract_address.contract_address);
     let group_address = contract_address.get_group_address(1);
     // assert the balance is default 0
     let mut child_contract_balance = erc20_dispatcher.balance_of(group_address);
@@ -401,8 +399,8 @@ fn test_pay_logic() {
     assert(
         creator_balance_after == creator_balance_before
             - 1_000_000_000_000_000_000_000
-            - 1_000_000_000_000_000_000,
-        'creator balance not up to date' // 1k strk for payment to contract and 1 strk for creation fee 
+            - 2_000_000_000_000_000_000,
+        'creator balance not up to date' // 1k strk for payment to contract and 2 strk for creation fee 
     );
 
     // pay the group
