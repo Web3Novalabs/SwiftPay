@@ -26,6 +26,20 @@ export const SWIFTSWAP_ABI: Abi = [
   },
   {
     type: "struct",
+    name: "contract::base::types::GroupMember",
+    members: [
+      {
+        name: "addr",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      {
+        name: "percentage",
+        type: "core::integer::u8",
+      },
+    ],
+  },
+  {
+    type: "struct",
     name: "core::integer::u256",
     members: [
       {
@@ -39,16 +53,16 @@ export const SWIFTSWAP_ABI: Abi = [
     ],
   },
   {
-    type: "struct",
-    name: "contract::base::types::GroupMember",
-    members: [
+    type: "enum",
+    name: "core::bool",
+    variants: [
       {
-        name: "addr",
-        type: "core::starknet::contract_address::ContractAddress",
+        name: "False",
+        type: "()",
       },
       {
-        name: "percentage",
-        type: "core::integer::u8",
+        name: "True",
+        type: "()",
       },
     ],
   },
@@ -65,8 +79,8 @@ export const SWIFTSWAP_ABI: Abi = [
         type: "core::byte_array::ByteArray",
       },
       {
-        name: "amount",
-        type: "core::integer::u256",
+        name: "is_paid",
+        type: "core::bool",
       },
       {
         name: "creator",
@@ -87,10 +101,6 @@ export const SWIFTSWAP_ABI: Abi = [
             type: "core::byte_array::ByteArray",
           },
           {
-            name: "amount",
-            type: "core::integer::u256",
-          },
-          {
             name: "members",
             type: "core::array::Array::<contract::base::types::GroupMember>",
           },
@@ -99,7 +109,11 @@ export const SWIFTSWAP_ABI: Abi = [
             type: "core::starknet::contract_address::ContractAddress",
           },
         ],
-        outputs: [],
+        outputs: [
+          {
+            type: "core::starknet::contract_address::ContractAddress",
+          },
+        ],
         state_mutability: "external",
       },
       {
@@ -120,11 +134,158 @@ export const SWIFTSWAP_ABI: Abi = [
       },
       {
         type: "function",
+        name: "get_group_address",
+        inputs: [
+          {
+            name: "group_id",
+            type: "core::integer::u256",
+          },
+        ],
+        outputs: [
+          {
+            type: "core::starknet::contract_address::ContractAddress",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
+        name: "get_all_groups",
+        inputs: [],
+        outputs: [
+          {
+            type: "core::array::Array::<contract::base::types::Group>",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
+        name: "get_groups_by_paid",
+        inputs: [
+          {
+            name: "is_paid",
+            type: "core::bool",
+          },
+        ],
+        outputs: [
+          {
+            type: "core::array::Array::<contract::base::types::Group>",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
+        name: "get_group_member",
+        inputs: [
+          {
+            name: "group_id",
+            type: "core::integer::u256",
+          },
+        ],
+        outputs: [
+          {
+            type: "core::array::Array::<contract::base::types::GroupMember>",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
+        name: "get_address_groups",
+        inputs: [
+          {
+            name: "address",
+            type: "core::starknet::contract_address::ContractAddress",
+          },
+        ],
+        outputs: [
+          {
+            type: "core::array::Array::<contract::base::types::Group>",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
         name: "upgrade",
         inputs: [
           {
             name: "new_class_hash",
             type: "core::starknet::class_hash::ClassHash",
+          },
+        ],
+        outputs: [],
+        state_mutability: "external",
+      },
+      {
+        type: "function",
+        name: "pay",
+        inputs: [
+          {
+            name: "group_address",
+            type: "core::starknet::contract_address::ContractAddress",
+          },
+        ],
+        outputs: [],
+        state_mutability: "external",
+      },
+      {
+        type: "function",
+        name: "get_group_balance",
+        inputs: [
+          {
+            name: "group_address",
+            type: "core::starknet::contract_address::ContractAddress",
+          },
+        ],
+        outputs: [
+          {
+            type: "core::integer::u256",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
+        name: "request_group_update",
+        inputs: [
+          {
+            name: "group_id",
+            type: "core::integer::u256",
+          },
+          {
+            name: "new_name",
+            type: "core::byte_array::ByteArray",
+          },
+          {
+            name: "new_members",
+            type: "core::array::Array::<contract::base::types::GroupMember>",
+          },
+        ],
+        outputs: [],
+        state_mutability: "external",
+      },
+      {
+        type: "function",
+        name: "approve_group_update",
+        inputs: [
+          {
+            name: "group_id",
+            type: "core::integer::u256",
+          },
+        ],
+        outputs: [],
+        state_mutability: "external",
+      },
+      {
+        type: "function",
+        name: "execute_group_update",
+        inputs: [
+          {
+            name: "group_id",
+            type: "core::integer::u256",
           },
         ],
         outputs: [],
@@ -140,6 +301,18 @@ export const SWIFTSWAP_ABI: Abi = [
         name: "admin",
         type: "core::starknet::contract_address::ContractAddress",
       },
+      {
+        name: "token_address",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      {
+        name: "emergency_withdraw_address",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      {
+        name: "child_contract_class_hash",
+        type: "core::starknet::class_hash::ClassHash",
+      },
     ],
   },
   {
@@ -147,6 +320,11 @@ export const SWIFTSWAP_ABI: Abi = [
     name: "contract::base::events::GroupCreated",
     kind: "struct",
     members: [
+      {
+        name: "group_address",
+        type: "core::starknet::contract_address::ContractAddress",
+        kind: "key",
+      },
       {
         name: "group_id",
         type: "core::integer::u256",
@@ -162,9 +340,75 @@ export const SWIFTSWAP_ABI: Abi = [
         type: "core::byte_array::ByteArray",
         kind: "data",
       },
+    ],
+  },
+  {
+    type: "event",
+    name: "contract::base::events::GroupUpdateRequested",
+    kind: "struct",
+    members: [
       {
-        name: "amount",
+        name: "group_id",
         type: "core::integer::u256",
+        kind: "key",
+      },
+      {
+        name: "requester",
+        type: "core::starknet::contract_address::ContractAddress",
+        kind: "data",
+      },
+      {
+        name: "new_name",
+        type: "core::byte_array::ByteArray",
+        kind: "data",
+      },
+    ],
+  },
+  {
+    type: "event",
+    name: "contract::base::events::GroupUpdateApproved",
+    kind: "struct",
+    members: [
+      {
+        name: "group_id",
+        type: "core::integer::u256",
+        kind: "key",
+      },
+      {
+        name: "approver",
+        type: "core::starknet::contract_address::ContractAddress",
+        kind: "data",
+      },
+      {
+        name: "approval_count",
+        type: "core::integer::u8",
+        kind: "data",
+      },
+      {
+        name: "total_members",
+        type: "core::integer::u8",
+        kind: "data",
+      },
+    ],
+  },
+  {
+    type: "event",
+    name: "contract::base::events::GroupUpdated",
+    kind: "struct",
+    members: [
+      {
+        name: "group_id",
+        type: "core::integer::u256",
+        kind: "key",
+      },
+      {
+        name: "old_name",
+        type: "core::byte_array::ByteArray",
+        kind: "data",
+      },
+      {
+        name: "new_name",
+        type: "core::byte_array::ByteArray",
         kind: "data",
       },
     ],
@@ -195,6 +439,38 @@ export const SWIFTSWAP_ABI: Abi = [
   },
   {
     type: "event",
+    name: "contract::base::events::GroupPaid",
+    kind: "struct",
+    members: [
+      {
+        name: "group_id",
+        type: "core::integer::u256",
+        kind: "key",
+      },
+      {
+        name: "amount",
+        type: "core::integer::u256",
+        kind: "data",
+      },
+      {
+        name: "paid_by",
+        type: "core::starknet::contract_address::ContractAddress",
+        kind: "data",
+      },
+      {
+        name: "paid_at",
+        type: "core::integer::u64",
+        kind: "data",
+      },
+      {
+        name: "members",
+        type: "core::array::Array::<contract::base::types::GroupMember>",
+        kind: "data",
+      },
+    ],
+  },
+  {
+    type: "event",
     name: "contract::autoshare::AutoShare::Event",
     kind: "enum",
     variants: [
@@ -204,9 +480,29 @@ export const SWIFTSWAP_ABI: Abi = [
         kind: "nested",
       },
       {
+        name: "GroupUpdateRequested",
+        type: "contract::base::events::GroupUpdateRequested",
+        kind: "nested",
+      },
+      {
+        name: "GroupUpdateApproved",
+        type: "contract::base::events::GroupUpdateApproved",
+        kind: "nested",
+      },
+      {
+        name: "GroupUpdated",
+        type: "contract::base::events::GroupUpdated",
+        kind: "nested",
+      },
+      {
         name: "UpgradeableEvent",
         type: "openzeppelin_upgrades::upgradeable::UpgradeableComponent::Event",
         kind: "flat",
+      },
+      {
+        name: "GroupPaid",
+        type: "contract::base::events::GroupPaid",
+        kind: "nested",
       },
     ],
   },

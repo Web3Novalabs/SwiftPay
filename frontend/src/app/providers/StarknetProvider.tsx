@@ -1,6 +1,6 @@
 "use client";
 
-import { StarknetConfig, InjectedConnector } from "@starknet-react/core";
+import { StarknetConfig, InjectedConnector, paymasterRpcProvider } from "@starknet-react/core";
 import { sepolia, mainnet } from "@starknet-react/chains";
 import { jsonRpcProvider } from "@starknet-react/core";
 
@@ -14,10 +14,21 @@ const connectors = [
 export function StarknetProvider({ children }: { children: React.ReactNode }) {
   return (
     <StarknetConfig
+      // paymasterProvider={paymasterRpcProvider({
+      //   rpc: () => {
+      //     return {
+      //       nodeUrl: "https://sepolia.paymaster.avnu.fi",
+      //       headers: {
+      //         "x-paymaster-api-key":
+      //           process.env.NEXT_PUBLIC_PAYMASTER_API ?? "",
+      //       },
+      //     };
+      //   },
+      // })}
       chains={chains}
       connectors={connectors}
       provider={jsonRpcProvider({
-        rpc: (chain) => ({ nodeUrl: chain.rpcUrls.default.http[0] }),
+        rpc: () => ({ nodeUrl: process.env.NEXT_PUBLIC_RPC_URL }),
       })}
     >
       {children}

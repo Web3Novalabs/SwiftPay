@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount, useNetwork, useBalance } from "@starknet-react/core";
+import { useEffect, useMemo, useState } from "react";
+import { useAccount, useNetwork, useBalance, useContract, useSendTransaction, useTransactionReceipt } from "@starknet-react/core";
 import { sepolia } from "@starknet-react/chains";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 // import { SWIFTPAY_CONTRACT_ADDRESS, writeContractWithStarknetJs } from "@/hooks/useBlockchain";
 import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
-import { byteArray, cairo, CallData } from "starknet";
+import { byteArray, cairo, CallData, Contract } from "starknet";
+import { myProvider } from "@/utils/contract";
 
 export const SWIFTPAY_CONTRACT_ADDRESS =
-  "0x049dba901f9a9c50509c070c47f37d191783b24ec8021b06ec5d8464af827918";
+  "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
 
 interface GroupMember {
   addr: string;
@@ -24,7 +25,7 @@ interface CreateGroupFormData {
 }
 
 export default function CreateGroupForm() {
-  const { address,account } = useAccount();
+  const { address, account } = useAccount();
   const { chain } = useNetwork();
   const { data: balance } = useBalance({
     token: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7", // ETH token address on Sepolia
@@ -38,19 +39,92 @@ export default function CreateGroupForm() {
       "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     members: [
       {
-        addr: "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-        percentage: 0,
+        addr: "0x07f41EEB3F8691F20a86A414b5670862a8c470ECE32d018e5c2fb1038F1bF836",
+        percentage: 40,
       },
       {
-        addr: "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938a",
-        percentage: 0,
+        addr: "0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a",
+        percentage: 60,
       },
     ],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { contract } = useContract({
+    abi: SWIFTSWAP_ABI,
+    address: SWIFTPAY_CONTRACT_ADDRESS,
+  });
 
+  // const {error,data,sendAsync,variables } = useSendTransaction({
+  //   calls:
+  //     contract && address
+  //       ? [contract?.populate("create_group", [byteArray.byteArrayFromString(formData.name),
+  //         formData.members,
+  //         formData.tokenAddress,])]
+  //       : undefined,
+  // });
+  // Contract Call Array
+
+  const [resultHash,setResultHash] = useState("") 
+  const calls = useMemo(() => {
+    // Validate the input values before proceeding
+    const isInputValid =
+      formData.members && formData.name && formData.tokenAddress;
+    if (!isInputValid) return [];
+
+    const populatedCall = contract?.populateTransaction["create_group"](
+      CallData.compile([
+        byteArray.byteArrayFromString(formData.name),
+        formData.members,
+        formData.tokenAddress,
+      ])
+    );
+
+    // Ensure calls is always an array or undefined
+    return populatedCall ? [populatedCall] : undefined;
+  }, [
+    contract,
+    formData.tokenAddress,
+    formData.members,
+    formData.name
+  ]);
+
+  const { data, error } = useTransactionReceipt({
+    hash: resultHash,
+  });
+
+  console.log()
+
+  useEffect(() => {
+    console.log(data, error)
+    let m 
+    if (!data) return
+    if (
+      data.value &&
+      typeof data.value === "object" &&
+      "events" in data.value &&
+      Array.isArray((data.value as any).events)
+    ) {
+      m = (data.value as any).events[2]?.data[0];
+      m= m.replace("0x","0x0")
+    } else {
+      m = undefined;
+    }
+    console.log(m)
+  },[data,error])
+  // const {
+  //      data: writeData,
+  //   isPending: writeIsPending,
+  //   sendAsync
+  // } = useSendTransaction({
+  //   calls,
+  // });
+
+  // const { isLoading: waitIsLoading, data: waitData } = useWaitForTransaction({
+  //   hash: writeData?.transaction_hash,
+  //   watch: true,
+  // });
   // Calculate total percentage
   const totalPercentage = formData.members.reduce(
     (sum, member) => sum + member.percentage,
@@ -111,13 +185,15 @@ export default function CreateGroupForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    // if (!validateForm()) {
+    //   return;
+    // }
 
     setIsSubmitting(true);
 
@@ -129,30 +205,56 @@ export default function CreateGroupForm() {
       // Prepare contract data
       const contractData = {
         name: formData.name,
-        amount: formData.amount,
+        // amount: formData.amount,
         members: formData.members,
         tokenAddress: formData.tokenAddress,
       };
 
-      console.log("Creating group with contract data:", contractData);
+      // console.log("Creating group with contract data:", contractData);
 
       // // Call the contract
       // const result = await createGroup(contractData);
       // let m = cairo.isTypeArray
       // console.log(m)
       if (account != undefined) {
+        // const data = Cont
         const result = await account.execute({
           contractAddress: SWIFTPAY_CONTRACT_ADDRESS,
           entrypoint: "create_group",
           calldata: CallData.compile({
             name: byteArray.byteArrayFromString(formData.name),
-            amount: cairo.uint256(Number(formData.amount)),
+            // amount: cairo.uint256(Number(formData.amount)),
             members: formData.members,
             token_address: formData.tokenAddress,
           }),
         });
+        // // let k = await myProvider.getAddressFromStarkName(result.transaction_hash)
+        // // let m = await myProvider.getTransactionReceipt(result.transaction_hash);
+        // let f = await myProvider.getTransactionReceipt(result.transaction_hash);
+        result.transaction_hash;
+        let fetchValue;
+        // if (
+        //   f.value &&
+        //   typeof f.value === "object" &&
+        //   "events" in f.value &&
+        //   Array.isArray((f.value as any).events)
+        // ) {
+        //   fetchValue = (f.value as any).events[0]?.data[0];
+        // } else {
+        //   fetchValue = undefined;
+        // }
+        // console.log({
+        //   // mait: k,
+        //   // txd: m,
+        //   fetch: fetchValue,
+        //   m: f.statusReceipt
+        // });
+        // console.log(result)
+        // await sendAsync();
+        setResultHash(result.transaction_hash)
+        // console.log({ writeData });
       }
-      // console.log("Transaction result:", result);
+
       // alert(
       //   `Group created successfully! Transaction hash: ${result.transaction_hash}`
       // );

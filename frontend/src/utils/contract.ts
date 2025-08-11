@@ -1,9 +1,14 @@
-import { Contract, Account, cairo, uint256 } from "starknet";
+import { Contract, Account, cairo, uint256, RpcProvider } from "starknet";
 import { SWIFTSWAP_ABI } from "../abi/swiftswap_abi";
 
 // Contract configuration
 export const CONTRACT_ADDRESS =
-  "0x049dba901f9a9c50509c070c47f37d191783b24ec8021b06ec5d8464af827918";
+  "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
+
+
+  export const myProvider = new RpcProvider({
+    nodeUrl: process.env.NEXT_PUBLIC_RPC_URL,
+  });
 
 // Types
 export interface GroupMember {
