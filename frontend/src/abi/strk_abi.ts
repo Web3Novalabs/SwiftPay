@@ -1,6 +1,7 @@
 import { Abi } from "starknet";
 
-export const STRK_ABI: Abi = [
+export const STRK_ABI: Abi =
+  [
   {
     type: "impl",
     name: "LockingContract",

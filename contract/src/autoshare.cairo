@@ -568,15 +568,9 @@ pub mod AutoShare {
             let amount = self._check_token_balance_of_child(contract_address);
         
             let caller = get_caller_address();
-            println!("balsnce before {}", amount);
+
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
-            token.approve(caller, amount);
-            let allowed_amount = token.allowance(get_contract_address(), caller);
-            println!("allowed amount {}", allowed_amount > 0);
-            println!("allowed amount {}", allowed_amount > 0);
-            assert(allowed_amount > 0, INSUFFICIENT_ALLOWANCE);
-            token.transfer_from(contract_address, caller, amount);
-        
+            token.transfer(caller, amount);    
         }
     }
 
