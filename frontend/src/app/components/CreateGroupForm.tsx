@@ -8,24 +8,36 @@ import {
   useContract,
   useSendTransaction,
   useTransactionReceipt,
+  usePaymasterEstimateFees,
+  usePaymasterSendTransaction,
 } from "@starknet-react/core";
 import { sepolia } from "@starknet-react/chains";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 // import { SWIFTPAY_CONTRACT_ADDRESS, writeContractWithStarknetJs } from "@/hooks/useBlockchain";
 import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
-import { byteArray, cairo, CallData, Contract, PaymasterDetails } from "starknet";
+import {
+  byteArray,
+  cairo,
+  Call,
+  CallData,
+  Contract,
+  FeeMode,
+  PaymasterDetails,
+} from "starknet";
 import { myProvider } from "@/utils/contract";
 import QRCode from "react-qr-code";
+import { STRK_ABI } from "@/abi/strk_abi";
+import { useCallback } from "react";
 
 export const SWIFTPAY_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
 
-  export const STRK_SEPOLIA =
-    "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
-  export const USDC_SEPOLIA =
-    "0x53b40a647cedfca6ca84f542a0fe36736031905a9639a7f19a3c1e66bfd5080";
-  export const ETH_SEPOLIA =
-    "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
+export const STRK_SEPOLIA =
+  "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+export const USDC_SEPOLIA =
+  "0x53b40a647cedfca6ca84f542a0fe36736031905a9639a7f19a3c1e66bfd5080";
+export const ETH_SEPOLIA =
+  "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
 
 interface GroupMember {
   addr: string;
@@ -69,27 +81,18 @@ export default function CreateGroupForm() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [groupBalance, setGroupBalance] = useState<string>("0");
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
-  const { contract } = useContract({
-    abi: SWIFTSWAP_ABI,
-    address: SWIFTPAY_CONTRACT_ADDRESS,
-  });
+
+  const [calls, setCalls] = useState<Call[] | undefined>(undefined);
+  const [shouldSend, setShouldSend] = useState(false);
 
   const { data: balance } = useBalance({
     token:
       "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d" as `0x${string}`,
     address: groupAddress as `0x${string}`,
   });
+  const strkTokenAddress =
+    "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
   console.log("balance in usebalance XXXXXXXXXXX______", balance);
-
-  // const {error,data,sendAsync,variables } = useSendTransaction({
-  //   calls:
-  //     contract && address
-  //       ? [contract?.populate("create_group", [byteArray.byteArrayFromString(formData.name),
-  //         formData.members,
-  //         formData.tokenAddress,])]
-  //       : undefined,
-  // });
-  // Contract Call Array
 
   const [resultHash, setResultHash] = useState("");
   const calls = useMemo(() => {
@@ -119,8 +122,6 @@ export default function CreateGroupForm() {
     hash: resultHash,
   });
 
-  console.log();
-
   // Fetch group balance
   const fetchGroupBalance = async (groupAddr: string) => {
     if (!groupAddr) return;
@@ -128,8 +129,6 @@ export default function CreateGroupForm() {
     setIsLoadingBalance(true);
     try {
       // STRK token address on Sepolia
-      const strkTokenAddress =
-        "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
       // Create a contract instance for the STRK token
       const strkContract = new Contract(
@@ -174,7 +173,7 @@ export default function CreateGroupForm() {
       "events" in data.value &&
       Array.isArray((data.value as any).events)
     ) {
-      m = (data.value as any).events[2]?.data[0];
+      m = (data.value as any).events[3]?.data[0];
       m = m.replace("0x", "0x0");
       setGroupAddress(m);
       setIsSuccess(true);
@@ -185,19 +184,7 @@ export default function CreateGroupForm() {
     }
     console.log(m);
   }, [data, error]);
-  // const {
-  //      data: writeData,
-  //   isPending: writeIsPending,
-  //   sendAsync
-  // } = useSendTransaction({
-  //   calls,
-  // });
 
-  // const { isLoading: waitIsLoading, data: waitData } = useWaitForTransaction({
-  //   hash: writeData?.transaction_hash,
-  //   watch: true,
-  // });
-  // Calculate total percentage
   const totalPercentage = formData.members.reduce(
     (sum, member) => sum + member.percentage,
     0
@@ -268,32 +255,14 @@ export default function CreateGroupForm() {
     setIsSubmitting(true);
 
     try {
-      // Convert amount to wei (assuming 18 decimals) - handle large numbers properly
       const amount = parseFloat(formData.amount);
-      const amountInWei = BigInt(Math.floor(amount * 1e18)).toString();
 
-      // Prepare contract data
-      const contractData = {
-        name: formData.name,
-        // amount: formData.amount,
-        members: formData.members,
-        tokenAddress: formData.tokenAddress,
-      };
-
-      // console.log("Creating group with contract data:", contractData);
-
-      // // Call the contract
-      // const result = await createGroup(contractData);
-      // let m = cairo.isTypeArray
-      // console.log(m)
       if (account != undefined) {
-        // const data = Cont
-        const result = await account.execute({
+        const swiftpayCall = {
           contractAddress: SWIFTPAY_CONTRACT_ADDRESS,
           entrypoint: "create_group",
           calldata: CallData.compile({
             name: byteArray.byteArrayFromString(formData.name),
-            // amount: cairo.uint256(Number(formData.amount)),
             members: formData.members,
             token_address: formData.tokenAddress,
           }),
@@ -361,10 +330,6 @@ export default function CreateGroupForm() {
         // console.log({ writeData });
       }
 
-      // alert(
-      //   `Group created successfully! Transaction hash: ${result.transaction_hash}`
-      // );
-
       // Reset form
       setFormData({
         name: "",
@@ -377,11 +342,6 @@ export default function CreateGroupForm() {
       });
     } catch (error) {
       console.error("Error creating group:", error);
-      alert(
-        `Failed to create group: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
     } finally {
       setIsSubmitting(false);
     }
