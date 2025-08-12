@@ -387,14 +387,13 @@ pub mod AutoShare {
             let group_members_vec = self.group_members.entry(group_id);
             let group_address = self.get_group_address(group_id);
             let amount = self._check_token_balance_of_child(group_address);
-            // println!("amount {:?}", amount); // 1000000000000000000 = 1*10^18
+
             assert(amount > 0, 'no payment made');
             let mut members_arr: Array<GroupMember> = ArrayTrait::new();
             for member in 0..group_members_vec.len() {
                 let member: GroupMember = group_members_vec.at(member).read();
                 let members_money: u256 = amount * member.percentage.try_into().unwrap() / 100;
-                // println!("members_money {:?}", members_money);
-                // println!("member.addr {:?}", member.addr);
+
                 // now transfer from group address to member address
                 members_arr.append(member);
                 let token = IERC20Dispatcher { contract_address: self.token_address.read() };
@@ -652,6 +651,21 @@ pub mod AutoShare {
 
         fn get_group_balance(self: @ContractState, group_address: ContractAddress) -> u256 {
             self._check_token_balance_of_child(group_address)
+        }
+
+        fn widthdraw(ref self: ContractState) {
+            let current_caller = get_caller_address();
+            let caller = current_caller == self.admin.read()
+                ||  current_caller == self.emergency_withdraw_address.read();
+
+            assert(caller, 'caller not admin or EMG admin');
+            let contract_address = get_contract_address();
+
+            // check contract balance
+            let amount = self._check_token_balance_of_child(contract_address);
+
+            let token = IERC20Dispatcher { contract_address: self.token_address.read() };
+            token.transfer(current_caller, amount);
         }
     }
 

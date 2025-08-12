@@ -12,7 +12,7 @@ export default function UserBalance() {
     isLoading,
     error,
   } = useBalance({
-    token: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7", // ETH token address on Sepolia
+    token: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
   });
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>("ETH");
 
@@ -73,7 +73,7 @@ export default function UserBalance() {
     const mockBalance = BigInt("1000000000000000000"); // 1 ETH in wei
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="bg-white mt-20 rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-gray-700">Wallet Balance</h3>
           <div className="flex space-x-1">
@@ -124,7 +124,7 @@ export default function UserBalance() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+    <div className="bg-white mt-10 rounded-lg shadow-sm border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-gray-700">Wallet Balance</h3>
         <div className="flex space-x-1">
