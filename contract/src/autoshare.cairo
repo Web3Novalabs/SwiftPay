@@ -558,9 +558,9 @@ pub mod AutoShare {
         }
 
         fn widthdraw(ref self: ContractState) {
-            let caller = get_caller_address();
-            let caller = caller == self.admin.read()
-                || caller == self.emergency_withdraw_address.read();
+            let current_caller = get_caller_address();
+            let caller = current_caller == self.admin.read()
+                ||  current_caller == self.emergency_withdraw_address.read();
 
             assert(caller, 'caller not admin or EMG admin');
             let contract_address = get_contract_address();
@@ -568,10 +568,8 @@ pub mod AutoShare {
             // check contract balance
             let amount = self._check_token_balance_of_child(contract_address);
 
-            let caller = get_caller_address();
-
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
-            token.transfer(caller, amount);
+            token.transfer(current_caller, amount);
         }
     }
 

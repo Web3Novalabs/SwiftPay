@@ -110,8 +110,8 @@ fn test_create_group_success() {
     let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
     assert(contract_balance_before == 0, 'balance not up to date');
 
-    let contract_balance_after = erc20_dispatcher.balance_of(ADMIN_ADDR());
-    assert(contract_balance_after == 1000000000000000000, 'balance not up to date');
+    let admin_balance_after = erc20_dispatcher.balance_of(ADMIN_ADDR());
+    assert(admin_balance_after == 1000000000000000000, 'balance not up to date');
 }
 
 #[test]
