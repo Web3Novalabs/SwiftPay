@@ -257,7 +257,7 @@ export default function CreateGroupForm() {
         };
 
         const multicallData = [approveCall, swiftpayCall];
-        const result = await account.execute(multicallData)
+        // const result = await account.execute(multicallData)
 
         const feeDetails: PaymasterDetails = {
           feeMode: {
@@ -265,16 +265,16 @@ export default function CreateGroupForm() {
           },
         };
 
-        // const feeEstimation = await account?.estimatePaymasterTransactionFee(
-        //   [...multicallData],
-        //   feeDetails
-        // );
+        const feeEstimation = await account?.estimatePaymasterTransactionFee(
+          [...multicallData],
+          feeDetails
+        );
 
-        // const result = await account?.executePaymasterTransaction(
-        //   [...multicallData],
-        //   feeDetails,
-        //   feeEstimation?.suggested_max_fee_in_gas_token
-        // );
+        const result = await account?.executePaymasterTransaction(
+          [...multicallData],
+          feeDetails,
+          feeEstimation?.suggested_max_fee_in_gas_token
+        );
 
         const status = await myProvider.waitForTransaction(
           result?.transaction_hash as string
