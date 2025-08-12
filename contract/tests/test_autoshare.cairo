@@ -100,7 +100,7 @@ fn test_create_group_success() {
     let main_contract_address = child_contract_instance.get_main_contract_address();
     assert(main_contract_address == contract_address.contract_address, 'main contract not set');
 
-    // widthraw asset 
+    // widthraw asset
     let contract_balance_before = erc20_dispatcher.balance_of(ADMIN_ADDR());
     assert(contract_balance_before == 0, 'sholud be zero');
     start_cheat_caller_address(contract_address.contract_address, ADMIN_ADDR());
