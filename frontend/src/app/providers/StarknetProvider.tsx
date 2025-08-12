@@ -14,17 +14,17 @@ const connectors = [
 export function StarknetProvider({ children }: { children: React.ReactNode }) {
   return (
     <StarknetConfig
-      paymasterProvider={paymasterRpcProvider({
-        rpc: () => {
-          return {
-            nodeUrl: "https://sepolia.paymaster.avnu.fi",
-            headers: {
-              "x-paymaster-api-key":
-                process.env.NEXT_PUBLIC_PAYMASTER_API ?? "",
-            },
-          };
-        },
-      })}
+      // paymasterProvider={paymasterRpcProvider({
+      //   rpc: () => {
+      //     return {
+      //       nodeUrl: "https://sepolia.paymaster.avnu.fi",
+      //       headers: {
+      //         "x-paymaster-api-key":
+      //           process.env.NEXT_PUBLIC_PAYMASTER_API ?? "",
+      //       },
+      //     };
+      //   },
+      // })}
       chains={chains}
       connectors={connectors}
       provider={jsonRpcProvider({

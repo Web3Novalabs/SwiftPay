@@ -95,28 +95,6 @@ export default function CreateGroupForm() {
   console.log("balance in usebalance XXXXXXXXXXX______", balance);
 
   const [resultHash, setResultHash] = useState("");
-  const calls = useMemo(() => {
-    // Validate the input values before proceeding
-    const isInputValid =
-      formData.members && formData.name && formData.tokenAddress;
-    if (!isInputValid) return [];
-
-  //   const populatedCall = contract?.populateTransaction["create_group"](
-  //     CallData.compile([
-  //       byteArray.byteArrayFromString(formData.name),
-  //       formData.members,
-  //       formData.tokenAddress,
-  //     ])
-  //   );
-
-  //   // Ensure calls is always an array or undefined
-  //   return populatedCall ? [populatedCall] : undefined;
-  // }, [
-  //   contract,
-  //   formData.tokenAddress,
-  //   formData.members,
-  //   formData.name
-  // ]);
 
   const { data, error } = useTransactionReceipt({
     hash: resultHash,
@@ -266,56 +244,34 @@ export default function CreateGroupForm() {
             members: formData.members,
             token_address: formData.tokenAddress,
           }),
-        });
-        // // let k = await myProvider.getAddressFromStarkName(result.transaction_hash)
-        // // let m = await myProvider.getTransactionReceipt(result.transaction_hash);
-        // let f = await myProvider.getTransactionReceipt(result.transaction_hash);
-        // result.transaction_hash;
-        // let fetchValue;
-        // if (
-        //   f.value &&
-        //   typeof f.value === "object" &&
-        //   "events" in f.value &&
-        //   Array.isArray((f.value as any).events)
-        // ) {
-        //   fetchValue = (f.value as any).events[0]?.data[0];
-        // } else {
-        //   fetchValue = undefined;
-        // }
-        // console.log({
-        //   // mait: k,
-        //   // txd: m,
-        //   fetch: fetchValue,
-        //   m: f.statusReceipt
-        // });
-        // console.log(result)
-        // await sendAsync();
+        };
 
-        // const calls = {
-        //   contractAddress: SWIFTPAY_CONTRACT_ADDRESS,
-        //   entrypoint: "create_group",
-        //   calldata: CallData.compile([
-        //     byteArray.byteArrayFromString(formData.name),
-        //     formData.members,
-        //     formData.tokenAddress,
-        //   ]),
-        // };
+        const approveCall = {
+          contractAddress: strkTokenAddress,
+          entrypoint: "approve",
+          calldata: [
+            SWIFTPAY_CONTRACT_ADDRESS, // spender
+            "1000000000000000000", // amount (1 STRK in wei)
+            "0",
+          ],
+        };
 
-        // const gasToken = ETH_SEPOLIA;
+        const multicallData = [approveCall, swiftpayCall];
+        const result = await account.execute(multicallData)
 
-        // const feeDetails: PaymasterDetails = {
-        //   feeMode: {
-        //     mode: "sponsored",
-        //   },
-        // };
+        const feeDetails: PaymasterDetails = {
+          feeMode: {
+            mode: "sponsored",
+          },
+        };
 
         // const feeEstimation = await account?.estimatePaymasterTransactionFee(
-        //   [calls],
+        //   [...multicallData],
         //   feeDetails
         // );
 
         // const result = await account?.executePaymasterTransaction(
-        //   [calls],
+        //   [...multicallData],
         //   feeDetails,
         //   feeEstimation?.suggested_max_fee_in_gas_token
         // );
@@ -324,11 +280,12 @@ export default function CreateGroupForm() {
           result?.transaction_hash as string
         );
 
-        console.log(result,status);
+        console.log(result);
 
-        setResultHash(result.transaction_hash)
-        // console.log({ writeData });
+        setResultHash(result.transaction_hash);
+        console.log(status);
       }
+
 
       // Reset form
       setFormData({
