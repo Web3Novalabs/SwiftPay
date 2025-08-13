@@ -126,7 +126,10 @@ pub mod AutoShare {
             contract_address: ContractAddress,
         ) {
             let creator_balance = token.balance_of(creator);
-            let amount = amount.unwrap_or(self.group_update_fee.read()); // if none is passed then we use the group creation fee
+            let amount = amount
+                .unwrap_or(
+                    self.group_update_fee.read(),
+                ); // if none is passed then we use the group creation fee
             assert(creator_balance >= amount, INSUFFICIENT_STRK_BALANCE);
 
             let allowed_amount = token.allowance(creator, contract_address);
@@ -318,7 +321,9 @@ pub mod AutoShare {
         }
 
         // Returns all groups where usage_limit_reached matches the argument
-        fn get_groups_by_usage_limit_reached(self: @ContractState, usage_limit_reached: bool) -> Array<Group> {
+        fn get_groups_by_usage_limit_reached(
+            self: @ContractState, usage_limit_reached: bool,
+        ) -> Array<Group> {
             let mut groups: Array<Group> = ArrayTrait::new();
             let count = self.group_count.read();
             let mut i: u256 = 1;
@@ -384,7 +389,10 @@ pub mod AutoShare {
             let caller = is_member || caller == group.creator || self.admin.read() == caller;
             assert(caller, 'not creator, member or admin');
             let mut usage_count = self.usage_count.read(group_id);
-            assert(usage_count > 0 || !group.clone().usage_limit_reached, 'Max Usage Renew Subscription');
+            assert(
+                usage_count > 0 || !group.clone().usage_limit_reached,
+                'Max Usage Renew Subscription',
+            );
             assert(group.id != 0, 'group id is 0');
             // removed the logic where caller is the creator
             let group_members_vec = self.group_members.entry(group_id);

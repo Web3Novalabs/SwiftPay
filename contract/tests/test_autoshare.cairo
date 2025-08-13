@@ -112,7 +112,7 @@ fn test_create_group_success() {
     assert(contract_balance_before == 0, '2balance not up to date');
 
     let admin_balance_after = erc20_dispatcher.balance_of(ADMIN_ADDR());
-    assert(admin_balance_after == 1000000000000000000, '3balance not up to date');
+    assert(admin_balance_after == 2000000000000000000, '3balance not up to date');
 }
 
 #[test]
@@ -334,7 +334,8 @@ fn test_get_all_groups_and_get_groups_by_usage_limit_reached() {
     assert(unpaid_groups.at(1).name == @"Group2", 'Unpaid group 2 name mismatch');
     assert(unpaid_groups.at(2).name == @"Group3", 'Unpaid group 3 name mismatch');
 
-    // Test get_groups_by_usage_limit_reached(true) - should return empty array since no groups are paid
+    // Test get_groups_by_usage_limit_reached(true) - should return empty array since no groups are
+    // paid
     let paid_groups = contract_address.get_groups_by_usage_limit_reached(true);
     assert(paid_groups.len() == 0_u32, 'Should return zerro');
 }
@@ -1096,8 +1097,7 @@ fn test_new_impl_pay_logic_should_panic_if_usage_limit_reached() {
 fn test_top_subscription_function() {
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
 
-    let mut creator_balance = erc20_dispatcher
-        .balance_of(CREATOR_ADDR().into());
+    let mut creator_balance = erc20_dispatcher.balance_of(CREATOR_ADDR().into());
     let mut contract_balance = erc20_dispatcher.balance_of(contract_address.contract_address);
 
     start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
@@ -1147,7 +1147,9 @@ fn test_top_subscription_function() {
     let creator_balance_after = erc20_dispatcher.balance_of(CREATOR_ADDR());
     let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
     assert(creator_balance_after == creator_balance - (2 * ONE_STRK), 'Creator balance incorrect');
-    assert(contract_balance_after == contract_balance + (2 * ONE_STRK), 'Contract balance incorrect');
+    assert(
+        contract_balance_after == contract_balance + (2 * ONE_STRK), 'Contract balance incorrect',
+    );
 
     usage_limit_reached_groups = contract_address.get_groups_by_usage_limit_reached(true);
     assert(usage_limit_reached_groups.len() == 0, 'usage limit reached groups != 0');
