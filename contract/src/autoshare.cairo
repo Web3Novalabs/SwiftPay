@@ -173,7 +173,6 @@ pub mod AutoShare {
             }
             let caller = get_caller_address();
             assert(caller != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
-
             assert(sum == 100, 'cummulative share not 100%');
             let id = self.group_count.read() + 1;
 
@@ -188,7 +187,7 @@ pub mod AutoShare {
                 i += 1;
             }
             // Collect pool creation fee based on how much we are charging for the group usage
-            let fee = self.get_group_usage_amount(usage_count);
+            let fee = self._get_group_usage_amount(usage_count);
             self._collect_group_creation_fee(caller, fee);
             self.group_count.write(id);
 
@@ -261,7 +260,7 @@ pub mod AutoShare {
             assert(new_planned_usage_count > 0, 'must be greater than 0');
             let mut usage_count_remaining = self.usage_count.entry(group_id).read();
             let new_planned_usage_count_to_write = usage_count_remaining + new_planned_usage_count;
-            let fee = self.get_group_usage_amount(new_planned_usage_count);
+            let fee = self.group_update_fee.read() * new_planned_usage_count;
             self._collect_group_creation_fee(get_caller_address(), fee);
             group.usage_limit_reached = false;
             self.groups.write(group_id, group);
@@ -313,11 +312,6 @@ pub mod AutoShare {
         fn get_group_usage_count(self: @ContractState, group_id: u256) -> u256 {
             let group_usage_count_storage = self.usage_count.entry(group_id);
             group_usage_count_storage.read()
-        }
-
-        fn get_group_usage_amount(self: @ContractState, usage_count: u256) -> u256 {
-            let group_usage_amount = usage_count * self.group_usage_fee.read();
-            group_usage_amount
         }
 
         // Returns all groups where usage_limit_reached matches the argument
@@ -443,7 +437,7 @@ pub mod AutoShare {
             let mut group: Group = self.get_group(group_id);
             assert(group.id != 0, ERR_GROUP_NOT_FOUND);
             let caller = get_caller_address();
-            assert(caller == group.creator, 'caller is not creator');
+            assert(caller == group.creator, 'caller is not the group creator');
 
             let mut sum: u32 = 0;
             let mut i: usize = 0;
@@ -463,9 +457,6 @@ pub mod AutoShare {
             }
             assert(sum == 100, 'total percentage must be 100');
 
-            // let is_member = self.is_group_member(group_id, caller);
-            // assert(is_member == true, 'caller is not a group member');
-
             // Store the new members separately
             let mut i: usize = 0;
             let member_count = new_members.len();
@@ -477,13 +468,10 @@ pub mod AutoShare {
             }
 
             let update_request = GroupUpdateRequest {
-                group_id,
-                new_name: new_name.clone(),
-                requester: caller,
-                fee_paid: false,
-                approval_count: 0,
-                // total_members: member_count.try_into().unwrap(),
-                is_completed: false,
+                group_id, new_name: new_name.clone(), requester: caller, fee_paid: false,
+                // approval_count: 0,
+            // total_members: member_count.try_into().unwrap(),
+            // is_completed: false,
             };
 
             // Collect the update fee
@@ -504,170 +492,87 @@ pub mod AutoShare {
                         },
                     ),
                 );
+
+            self._execute_group_update(group_id);
         }
 
-        fn approve_group_update(ref self: ContractState, group_id: u256) {
-            let mut group: Group = self.get_group(group_id);
-            assert(group.id != 0, ERR_GROUP_NOT_FOUND);
-            let caller = get_caller_address();
+        // fn approve_group_update(ref self: ContractState, group_id: u256) {
+        //     let mut group: Group = self.get_group(group_id);
+        //     assert(group.id != 0, ERR_GROUP_NOT_FOUND);
+        //     let caller = get_caller_address();
 
-            let is_member = self.is_group_member(group_id, caller);
-            assert(is_member == true, 'caller is not a group member');
+        //     let is_member = self.is_group_member(group_id, caller);
+        //     assert(is_member == true, 'caller is not a group member');
 
-            // Check if the group has a pending update
-            let already_approved = self.update_approvals.read((group_id, caller));
-            assert(already_approved == false, ERR_ALREADY_APPROVED);
+        //     // Check if the group has a pending update
+        //     let already_approved = self.update_approvals.read((group_id, caller));
+        //     assert(already_approved == false, ERR_ALREADY_APPROVED);
 
-            let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
+        //     let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
 
-            // checks if the update fee has been paid
+        //     // checks if the update fee has been paid
 
-            assert(update_request.fee_paid == true, ERR_UPDATE_FEE_NOT_PAID);
+        //     assert(update_request.fee_paid == true, ERR_UPDATE_FEE_NOT_PAID);
 
-            // check if the update request exists and is not completed
-            assert(update_request.is_completed == false, ERR_UPDATE_REQUEST_NOT_FOUND);
+        //     // check if the update request exists and is not completed
+        //     assert(update_request.is_completed == false, ERR_UPDATE_REQUEST_NOT_FOUND);
 
-            let approval_count = update_request.approval_count;
-            let total_members = self.get_group_member(group_id);
-            let total_members = total_members.len();
-            assert(approval_count < total_members.try_into().unwrap(), ERR_INSUFFICIENT_APPROVALS);
+        //     let approval_count = update_request.approval_count;
+        //     let total_members = self.get_group_member(group_id);
+        //     let total_members = total_members.len();
+        //     assert(approval_count < total_members.try_into().unwrap(),
+        //     ERR_INSUFFICIENT_APPROVALS);
 
-            // Mark caller as having approved the update
-            self.update_approvals.write((group_id, caller), true);
+        //     // Mark caller as having approved the update
+        //     self.update_approvals.write((group_id, caller), true);
 
-            let approval_counts = approval_count + 1;
-            let mut updated_request = update_request.clone();
-            updated_request.approval_count = approval_counts;
+        //     let approval_counts = approval_count + 1;
+        //     let mut updated_request = update_request.clone();
+        //     updated_request.approval_count = approval_counts;
 
-            // Clone for event BEFORE moving to storage
-            let updated_request_for_event = updated_request.clone();
+        //     // Clone for event BEFORE moving to storage
+        //     let updated_request_for_event = updated_request.clone();
 
-            self.update_requests.write(group_id, updated_request);
-            if approval_counts == total_members.try_into().unwrap() {
-                let mut final_request = updated_request_for_event.clone();
-                final_request.is_completed = true;
-                self.update_requests.write(group_id, final_request);
-                self.has_pending_update.write(group_id, false);
+        //     self.update_requests.write(group_id, updated_request);
+        //     if approval_counts == total_members.try_into().unwrap() {
+        //         let mut final_request = updated_request_for_event.clone();
+        //         final_request.is_completed = true;
+        //         self.update_requests.write(group_id, final_request);
+        //         self.has_pending_update.write(group_id, false);
 
-                let new_members = self.get_update_request_new_members(group_id);
-                let mut member_count: u32 = new_members.len();
+        //         let new_members = self.get_update_request_new_members(group_id);
+        //         let mut member_count: u32 = new_members.len();
 
-                self
-                    .emit(
-                        Event::GroupUpdated(
-                            GroupUpdated {
-                                group_id,
-                                old_name: group.name.clone(),
-                                new_name: updated_request_for_event.new_name.clone(),
-                            },
-                        ),
-                    );
-            }
+        //         self
+        //             .emit(
+        //                 Event::GroupUpdated(
+        //                     GroupUpdated {
+        //                         group_id,
+        //                         old_name: group.name.clone(),
+        //                         new_name: updated_request_for_event.new_name.clone(),
+        //                     },
+        //                 ),
+        //             );
+        //     }
 
-            self
-                .emit(
-                    Event::GroupUpdateApproved(
-                        GroupUpdateApproved {
-                            group_id,
-                            approver: caller,
-                            approval_count: approval_counts,
-                            total_members: total_members.try_into().unwrap(),
-                        },
-                    ),
-                );
-        }
-
-        fn execute_group_update(ref self: ContractState, group_id: u256) {
-            let mut group: Group = self.get_group(group_id);
-            assert(group.id != 0, ERR_GROUP_NOT_FOUND);
-            let caller = get_caller_address();
-
-            // Check if the group has a pending update
-            let has_pending_update = self.has_pending_update.read(group_id);
-            assert(has_pending_update == false, 'no pending updt for this group');
-
-            // Retrieve the update request
-            let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
-
-            assert(update_request.is_completed == true, 'update request not completed');
-
-            // Check if the caller is the group creator
-            let is_creator = caller == group.creator;
-            assert(is_creator, 'caller is not the group creator');
-
-            // Store old and new values for the event BEFORE moving group
-            let old_name = group.name.clone();
-            let new_name = update_request.new_name.clone();
-
-            // Update the group with new values
-            group.name = new_name.clone();
-            self.groups.write(group_id, group);
-
-            // Clear the update request
-            self
-                .update_requests
-                .write(
-                    group_id,
-                    GroupUpdateRequest {
-                        group_id: 0,
-                        new_name: "",
-                        requester: starknet::contract_address_const::<0>(),
-                        fee_paid: false,
-                        approval_count: 0,
-                        // total_members: 0,
-                        is_completed: false,
-                    },
-                );
-
-            // remove all previous members
-            let new_members = self.get_update_request_new_members(group_id);
-            let mut member_count: u32 = new_members.len();
-            let mut members_vec = self.group_members.entry(group_id);
-            while member_count > 0 {
-                members_vec.pop();
-                member_count -= 1;
-            }
-
-            let mut i: u32 = 0;
-            let member_count = self.update_request_new_members.entry(group_id);
-            let mut len: u32 = member_count.len().try_into().unwrap();
-            while i < len {
-                let m: u64 = i.try_into().unwrap();
-                let member = new_members.at(i).clone();
-                self.group_members.entry(group_id).push(member);
-                i += 1;
-            }
-
-            // Clear the new members for the update request
-            let mut new_members_vec = self.update_request_new_members.entry(group_id);
-            let mut len = new_members_vec.len();
-            while len > 0 {
-                new_members_vec.pop();
-                len -= 1;
-            }
-
-            // Clear the update approvals for all current group members
-            let group_members_vec = self.group_members.entry(group_id);
-            let mut i: u64 = 0;
-            let len: u64 = group_members_vec.len();
-            while i < len {
-                let member = group_members_vec.at(i).read();
-                self.update_approvals.write((group_id, member.addr), false);
-                i += 1;
-            }
-
-            // Clear the pending update status
-            self.has_pending_update.write(group_id, false);
-
-            // Emit the GroupUpdated event
-            self.emit(Event::GroupUpdated(GroupUpdated { group_id, old_name, new_name }));
-        }
+        //     self
+        //         .emit(
+        //             Event::GroupUpdateApproved(
+        //                 GroupUpdateApproved {
+        //                     group_id,
+        //                     approver: caller,
+        //                     approval_count: approval_counts,
+        //                     total_members: total_members.try_into().unwrap(),
+        //                 },
+        //             ),
+        //         );
+        // }
 
         fn get_group_balance(self: @ContractState, group_address: ContractAddress) -> u256 {
             self._check_token_balance_of_child(group_address)
         }
 
-        fn widthdraw(ref self: ContractState) {
+        fn withdraw(ref self: ContractState) {
             let current_caller = get_caller_address();
             let caller = current_caller == self.admin.read()
                 || current_caller == self.emergency_withdraw_address.read();
@@ -787,6 +692,105 @@ pub mod AutoShare {
             let token = IERC20Dispatcher { contract_address: self.token_address.read() };
             let balance = token.balance_of(group_address);
             balance
+        }
+        fn _get_group_usage_amount(self: @ContractState, usage_count: u256) -> u256 {
+            let group_usage_amount = usage_count * self.group_usage_fee.read();
+            group_usage_amount
+        }
+
+        fn _execute_group_update(ref self: ContractState, group_id: u256) {
+            let mut group: Group = self.get_group(group_id);
+            assert(group.id != 0, ERR_GROUP_NOT_FOUND);
+            let caller = get_caller_address();
+
+            // Check if the group has a pending update
+            // let has_pending_update = self.has_pending_update.read(group_id);
+            // assert(has_pending_update == false, 'no pending updt for this group');
+
+            // Retrieve the update request
+            let update_request: GroupUpdateRequest = self.update_requests.read(group_id);
+
+            // assert(update_request.is_completed == true, 'update request not completed');
+
+            // Check if the caller is the group creator
+            let is_creator = caller == group.creator;
+            assert(is_creator, 'caller is not the group creator');
+
+            // Store old and new values for the event BEFORE moving group
+            let old_name = group.name.clone();
+            let new_name = update_request.new_name.clone();
+
+            // Update the group with new values
+            group.name = new_name.clone();
+            self.groups.write(group_id, group);
+
+            // Clear the update request
+            self
+                .update_requests
+                .write(
+                    group_id,
+                    GroupUpdateRequest {
+                        group_id: 0,
+                        new_name: "",
+                        requester: starknet::contract_address_const::<0>(),
+                        fee_paid: false,
+                        // approval_count: 0,
+                    // total_members: 0,
+                    // is_completed: false,
+                    },
+                );
+
+            // remove all previous members
+            let new_members = self.get_update_request_new_members(group_id);
+            let mut member_count: u32 = new_members.len();
+            let mut members_vec = self.group_members.entry(group_id);
+            while member_count > 0 {
+                members_vec.pop();
+                member_count -= 1;
+            }
+
+            // Clear the previous members for the update request
+            let mut previous_member = self.group_members.entry(group_id);
+            let mut len = previous_member.len();
+            while len > 0 {
+                previous_member.pop();
+                len -= 1;
+            }
+
+            let mut i: u32 = 0;
+            let member_count = self.update_request_new_members.entry(group_id);
+            let mut len: u32 = member_count.len().try_into().unwrap();
+
+            while i < len {
+                let m: u64 = i.try_into().unwrap();
+                let member = new_members.at(i).clone();
+                self.group_members.entry(group_id).push(member);
+                i += 1;
+            }
+
+            // Clear the new members for the update request
+            let mut new_members_vec = self.update_request_new_members.entry(group_id);
+            let mut len = new_members_vec.len();
+            while len > 0 {
+                new_members_vec.pop();
+                len -= 1;
+            }
+
+            // Clear the update approvals for all current group members
+            let group_members_vec = self.group_members.entry(group_id);
+            let mut i: u64 = 0;
+            let len: u64 = group_members_vec.len();
+            while i < len {
+                let member = group_members_vec.at(i).read();
+                self.update_approvals.write((group_id, member.addr), false);
+                i += 1;
+            }
+
+            // Clear the pending update status
+            self.has_pending_update.write(group_id, false);
+
+            // Emit the GroupUpdated event
+            self.emit(Event::GroupUpdated(GroupUpdated { group_id, old_name, new_name }));
         }
     }
 }
