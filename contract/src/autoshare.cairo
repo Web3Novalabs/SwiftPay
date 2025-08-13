@@ -742,12 +742,6 @@ pub mod AutoShare {
 
             // remove all previous members
             let new_members = self.get_update_request_new_members(group_id);
-            let mut member_count: u32 = new_members.len();
-            let mut members_vec = self.group_members.entry(group_id);
-            while member_count > 0 {
-                members_vec.pop();
-                member_count -= 1;
-            }
 
             // Clear the previous members for the update request
             let mut previous_member = self.group_members.entry(group_id);
@@ -761,6 +755,7 @@ pub mod AutoShare {
             let member_count = self.update_request_new_members.entry(group_id);
             let mut len: u32 = member_count.len().try_into().unwrap();
 
+            // push new member to the group member storage
             while i < len {
                 let m: u64 = i.try_into().unwrap();
                 let member = new_members.at(i).clone();
