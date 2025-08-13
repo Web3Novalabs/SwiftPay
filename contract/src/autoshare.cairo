@@ -249,7 +249,9 @@ pub mod AutoShare {
             }
             group_members
         }
-        fn get_address_groups(self: @ContractState, address: ContractAddress) -> Array<Group> {
+        fn group_address_has_shares_in(
+            self: @ContractState, address: ContractAddress,
+        ) -> Array<Group> {
             let mut group: Array<Group> = ArrayTrait::new();
             let count = self.group_count.read();
             let len = count;
@@ -560,7 +562,7 @@ pub mod AutoShare {
         fn widthdraw(ref self: ContractState) {
             let current_caller = get_caller_address();
             let caller = current_caller == self.admin.read()
-                ||  current_caller == self.emergency_withdraw_address.read();
+                || current_caller == self.emergency_withdraw_address.read();
 
             assert(caller, 'caller not admin or EMG admin');
             let contract_address = get_contract_address();
