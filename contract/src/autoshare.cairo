@@ -126,7 +126,7 @@ pub mod AutoShare {
             contract_address: ContractAddress,
         ) {
             let creator_balance = token.balance_of(creator);
-            let amount = amount.unwrap_or(self.group_usage_fee.read());
+            let amount = amount.unwrap_or(self.group_update_fee.read()); // if none is passed then we use the group creation fee
             assert(creator_balance >= amount, INSUFFICIENT_STRK_BALANCE);
 
             let allowed_amount = token.allowance(creator, contract_address);
@@ -175,7 +175,7 @@ pub mod AutoShare {
             let id = self.group_count.read() + 1;
 
             let group = Group {
-                id, name: name.clone(), is_paid: false, creator: get_caller_address(),
+                id, name: name.clone(), usage_limit_reached: false, creator: get_caller_address(),
             };
             self.groups.write(id, group.clone());
 
@@ -255,8 +255,13 @@ pub mod AutoShare {
             let is_member = self.is_group_member(group_id, caller);
             let caller = is_member || caller == group.creator;
             assert(caller, 'Only creator or admin');
+            assert(new_planned_usage_count > 0, 'must be greater than 0');
             let mut usage_count_remaining = self.usage_count.entry(group_id).read();
             let new_planned_usage_count_to_write = usage_count_remaining + new_planned_usage_count;
+            let fee = self.get_group_usage_amount(new_planned_usage_count);
+            self._collect_group_creation_fee(get_caller_address(), fee);
+            group.usage_limit_reached = false;
+            self.groups.write(group_id, group);
             self.group_usage_paid.entry(group_id).write(new_planned_usage_count_to_write);
             self.usage_count.entry(group_id).write(new_planned_usage_count_to_write);
             self.group_usage_paid_history.entry(group_id).push(new_planned_usage_count);
@@ -312,14 +317,14 @@ pub mod AutoShare {
             group_usage_amount
         }
 
-        // Returns all groups where is_paid matches the argument
-        fn get_groups_by_paid(self: @ContractState, is_paid: bool) -> Array<Group> {
+        // Returns all groups where usage_limit_reached matches the argument
+        fn get_groups_by_usage_limit_reached(self: @ContractState, usage_limit_reached: bool) -> Array<Group> {
             let mut groups: Array<Group> = ArrayTrait::new();
             let count = self.group_count.read();
             let mut i: u256 = 1;
             while i <= count {
                 let group = self.groups.read(i);
-                if group.is_paid == is_paid {
+                if group.usage_limit_reached == usage_limit_reached {
                     groups.append(group);
                 }
                 i = i + 1;
@@ -379,9 +384,7 @@ pub mod AutoShare {
             let caller = is_member || caller == group.creator || self.admin.read() == caller;
             assert(caller, 'not creator, member or admin');
             let mut usage_count = self.usage_count.read(group_id);
-            if usage_count == 0 {
-                assert(!true, 'Max Usage Renew Subscription');
-            }
+            assert(usage_count > 0 || !group.clone().usage_limit_reached, 'Max Usage Renew Subscription');
             assert(group.id != 0, 'group id is 0');
             // removed the logic where caller is the creator
             let group_members_vec = self.group_members.entry(group_id);
@@ -399,10 +402,12 @@ pub mod AutoShare {
                 let token = IERC20Dispatcher { contract_address: self.token_address.read() };
                 token.transfer_from(group_address, member.addr, members_money);
             }
-            group.is_paid = true;
+            usage_count -= 1;
+            if usage_count == 0 {
+                group.usage_limit_reached = true;
+            }
             self.groups.write(group_id, group);
             // once paid, we decrement the planned usage count
-            usage_count -= 1;
             self.usage_count.write(group_id, usage_count);
             self
                 .emit(
@@ -586,7 +591,6 @@ pub mod AutoShare {
 
             // Update the group with new values
             group.name = new_name.clone();
-            group.is_paid = false; // Reset is_paid to false after update
             self.groups.write(group_id, group);
 
             // Clear the update request
@@ -656,7 +660,7 @@ pub mod AutoShare {
         fn widthdraw(ref self: ContractState) {
             let current_caller = get_caller_address();
             let caller = current_caller == self.admin.read()
-                ||  current_caller == self.emergency_withdraw_address.read();
+                || current_caller == self.emergency_withdraw_address.read();
 
             assert(caller, 'caller not admin or EMG admin');
             let contract_address = get_contract_address();

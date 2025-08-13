@@ -79,7 +79,7 @@ export const SWIFTSWAP_ABI: Abi = [
         type: "core::byte_array::ByteArray",
       },
       {
-        name: "is_paid",
+        name: "usage_limit_reached",
         type: "core::bool",
       },
       {
@@ -164,7 +164,7 @@ export const SWIFTSWAP_ABI: Abi = [
         name: "get_groups_by_paid",
         inputs: [
           {
-            name: "is_paid",
+            name: "usage_limit_reached",
             type: "core::bool",
           },
         ],

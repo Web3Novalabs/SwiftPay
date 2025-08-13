@@ -493,7 +493,7 @@ CREATE TABLE groups (
   amount VARCHAR NOT NULL, -- BigInt as string
   creator_address VARCHAR NOT NULL,
   member_count INTEGER DEFAULT 0,
-  is_paid BOOLEAN DEFAULT FALSE,
+  usage_limit_reached BOOLEAN DEFAULT FALSE,
   has_pending_update BOOLEAN DEFAULT FALSE,
   approval_count INTEGER DEFAULT 0,
   transaction_hash VARCHAR,

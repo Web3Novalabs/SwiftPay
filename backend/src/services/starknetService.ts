@@ -289,7 +289,7 @@ export class StarkNetService {
       id: groupData.id.toString(),
       name: groupData.name,
       amount: groupData.amount.toString(),
-      isPaid: groupData.is_paid,
+      isPaid: groupData.usage_limit_reached,
       creator: groupData.creator
     };
   }

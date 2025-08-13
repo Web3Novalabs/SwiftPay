@@ -94,7 +94,7 @@ fn test_create_group_success() {
     let group_address = contract_address.get_group_address(1);
 
     let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
-    assert(contract_balance_after == 2000000000000000000, 'balance not up to date');
+    assert(contract_balance_after == 2000000000000000000, '1 balance not up to date');
 
     // asset that the main contract has been set in the child contract
     let child_contract_instance = IAutoshareChildDispatcher { contract_address: group_address };
@@ -109,10 +109,10 @@ fn test_create_group_success() {
     stop_cheat_caller_address(contract_address.contract_address);
 
     let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
-    assert(contract_balance_before == 0, 'balance not up to date');
+    assert(contract_balance_before == 0, '2balance not up to date');
 
     let admin_balance_after = erc20_dispatcher.balance_of(ADMIN_ADDR());
-    assert(admin_balance_after == 1000000000000000000, 'balance not up to date');
+    assert(admin_balance_after == 1000000000000000000, '3balance not up to date');
 }
 
 #[test]
@@ -286,7 +286,7 @@ fn test_token_data() {
 }
 
 #[test]
-fn test_get_all_groups_and_get_groups_by_paid() {
+fn test_get_all_groups_and_get_groups_by_usage_limit_reached() {
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let token = erc20_dispatcher.contract_address;
 
@@ -296,7 +296,7 @@ fn test_get_all_groups_and_get_groups_by_paid() {
         .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
-    // Group 1: is_paid = false (default)
+    // Group 1: usage_limit_reached = false (default)
     let mut members1 = ArrayTrait::new();
     members1.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members1.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
@@ -304,7 +304,7 @@ fn test_get_all_groups_and_get_groups_by_paid() {
     contract_address.create_group("Group1", members1, token, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
-    // Group 2: is_paid = false (default)
+    // Group 2: usage_limit_reached = false (default)
     let mut members2 = ArrayTrait::new();
     members2.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
     members2.append(GroupMember { addr: USER3_ADDR(), percentage: 50 });
@@ -312,7 +312,7 @@ fn test_get_all_groups_and_get_groups_by_paid() {
     contract_address.create_group("Group2", members2, token, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
-    // Group 3: is_paid = false (default)
+    // Group 3: usage_limit_reached = false (default)
     let mut members3 = ArrayTrait::new();
     members3.append(GroupMember { addr: USER1_ADDR(), percentage: 10 });
     members3.append(GroupMember { addr: USER3_ADDR(), percentage: 90 });
@@ -327,15 +327,15 @@ fn test_get_all_groups_and_get_groups_by_paid() {
     assert(all_groups.at(1).name == @"Group2", 'Second group name mismatch');
     assert(all_groups.at(2).name == @"Group3", 'Third group name mismatch');
 
-    // Test get_groups_by_paid(false) - should return all groups since all are unpaid
-    let unpaid_groups = contract_address.get_groups_by_paid(false);
+    // Test get_groups_by_usage_limit_reached(false) - should return all groups since all are unpaid
+    let unpaid_groups = contract_address.get_groups_by_usage_limit_reached(false);
     assert(unpaid_groups.len() == 3_u32, 'Should return 3 unpaid groups');
     assert(unpaid_groups.at(0).name == @"Group1", 'Unpaid group 1 name mismatch');
     assert(unpaid_groups.at(1).name == @"Group2", 'Unpaid group 2 name mismatch');
     assert(unpaid_groups.at(2).name == @"Group3", 'Unpaid group 3 name mismatch');
 
-    // Test get_groups_by_paid(true) - should return empty array since no groups are paid
-    let paid_groups = contract_address.get_groups_by_paid(true);
+    // Test get_groups_by_usage_limit_reached(true) - should return empty array since no groups are paid
+    let paid_groups = contract_address.get_groups_by_usage_limit_reached(true);
     assert(paid_groups.len() == 0_u32, 'Should return zerro');
 }
 
@@ -347,11 +347,11 @@ fn test_get_all_groups_empty() {
     let all_groups = contract_address.get_all_groups();
     assert(all_groups.len() == 0_u32, 'Should be zero');
 
-    // Test get_groups_by_paid when no groups exist
-    let unpaid_groups = contract_address.get_groups_by_paid(false);
+    // Test get_groups_by_usage_limit_reached when no groups exist
+    let unpaid_groups = contract_address.get_groups_by_usage_limit_reached(false);
     assert(unpaid_groups.len() == 0_u32, 'Should be zero');
 
-    let paid_groups = contract_address.get_groups_by_paid(true);
+    let paid_groups = contract_address.get_groups_by_usage_limit_reached(true);
     assert(paid_groups.len() == 0_u32, 'Should be zero ');
 }
 
@@ -434,7 +434,7 @@ fn test_pay_logic() {
     );
 
     let group = contract_address.get_group(1);
-    assert(group.is_paid, 'group is not paid');
+    assert(!group.usage_limit_reached, 'group is not paid');
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -626,7 +626,7 @@ fn test_approve_group_update_success() {
     // check group update
     let group = contract_address.get_group(1);
     assert(group.name == "UpdatedGroup", 'Name not updated');
-    assert(group.is_paid == false, 'is_paid updated');
+    assert(group.usage_limit_reached == false, 'usage_limit_reached updated');
     // // check group members
     let group_members = contract_address.get_group_member(1);
     assert(group_members.len() == 3, 'Group members not updated');
@@ -690,7 +690,6 @@ fn test_execute_group_update_success() {
     // Verify the group was updated correctly
     let group = contract_address.get_group(1);
     assert(group.name == "GroupUpdateSuccess", 'Name not updated');
-    assert(group.is_paid == false, 'is_paid should reset to false');
 }
 
 #[test]
@@ -1090,5 +1089,76 @@ fn test_new_impl_pay_logic_should_panic_if_usage_limit_reached() {
 
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     contract_address.pay(group_address);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+fn test_top_subscription_function() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    let mut creator_balance = erc20_dispatcher
+        .balance_of(CREATOR_ADDR().into());
+    let mut contract_balance = erc20_dispatcher.balance_of(contract_address.contract_address);
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 5_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+
+    let members: Array<GroupMember> = array![
+        GroupMember { addr: USER1_ADDR(), percentage: 60 },
+        GroupMember { addr: USER2_ADDR(), percentage: 40 },
+    ];
+
+    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    stop_cheat_caller_address(contract_address.contract_address);
+    let group_address = contract_address.get_group_address(1);
+
+    let mut usage_limit_reached_groups = contract_address.get_groups_by_usage_limit_reached(true);
+    assert(usage_limit_reached_groups.len() == 0, 'usage limit reached groups != 0');
+
+    let mut group_usage_count = contract_address.get_group_usage_count(1);
+    assert(group_usage_count == 1, 'Group usage count incorrect');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
+    contract_address.pay(group_address);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    usage_limit_reached_groups = contract_address.get_groups_by_usage_limit_reached(true);
+    assert(usage_limit_reached_groups.len() == 1, 'usage limit reached groups != 1');
+    assert(*usage_limit_reached_groups.at(0).id == 1, 'usage limit reached groups != 1');
+
+    creator_balance = erc20_dispatcher.balance_of(CREATOR_ADDR());
+    contract_balance = erc20_dispatcher.balance_of(contract_address.contract_address);
+    // top up subscription
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.top_subscription(1, 2);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    group_usage_count = contract_address.get_group_usage_count(1);
+    assert(group_usage_count == 2, 'Group usage count incorrect');
+
+    // assert that the 2 strk left the creator and the money in the contract increased by 2 strk
+    let creator_balance_after = erc20_dispatcher.balance_of(CREATOR_ADDR());
+    let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(creator_balance_after == creator_balance - (2 * ONE_STRK), 'Creator balance incorrect');
+    assert(contract_balance_after == contract_balance + (2 * ONE_STRK), 'Contract balance incorrect');
+
+    usage_limit_reached_groups = contract_address.get_groups_by_usage_limit_reached(true);
+    assert(usage_limit_reached_groups.len() == 0, 'usage limit reached groups != 0');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
+    contract_address.pay(group_address);
+    stop_cheat_caller_address(contract_address.contract_address);
+
     stop_cheat_caller_address(contract_address.contract_address);
 }

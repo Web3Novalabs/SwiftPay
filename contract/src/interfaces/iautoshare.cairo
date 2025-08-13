@@ -13,7 +13,7 @@ pub trait IAutoShare<TContractState> {
     fn get_group(self: @TContractState, group_id: u256) -> Group;
     fn get_group_address(self: @TContractState, group_id: u256) -> ContractAddress;
     fn get_all_groups(self: @TContractState) -> Array<Group>;
-    fn get_groups_by_paid(self: @TContractState, is_paid: bool) -> Array<Group>;
+    fn get_groups_by_usage_limit_reached(self: @TContractState, usage_limit_reached: bool) -> Array<Group>;
     fn get_group_member(self: @TContractState, group_id: u256) -> Array<GroupMember>;
     // renews a subscription fo a group
     fn top_subscription(ref self: TContractState, group_id: u256, new_planned_usage_count: u256);

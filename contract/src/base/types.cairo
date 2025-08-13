@@ -11,7 +11,7 @@ pub struct GroupMember {
 pub struct Group {
     pub id: u256,
     pub name: ByteArray,
-    pub is_paid: bool,
+    pub usage_limit_reached: bool,
     pub creator: ContractAddress,
 }
 
