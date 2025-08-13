@@ -349,7 +349,9 @@ pub mod AutoShare {
             }
             group_members
         }
-        fn get_address_groups(self: @ContractState, address: ContractAddress) -> Array<Group> {
+        fn group_address_has_shares_in(
+            self: @ContractState, address: ContractAddress,
+        ) -> Array<Group> {
             let mut group: Array<Group> = ArrayTrait::new();
             let count = self.group_count.read();
             let len = count;

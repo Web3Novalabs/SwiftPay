@@ -210,10 +210,10 @@ fn test_get_group_success() {
     assert(group_members2.len() == 3, 'len not 3');
 
     // check how number of group an address is part of
-    let has_share_in_group1 = contract_address.get_address_groups(USER3_ADDR());
-    let has_share_in_group2 = contract_address.get_address_groups(USER1_ADDR());
-    let has_share_in_group3 = contract_address.get_address_groups(USER2_ADDR());
-    let has_share_in_group4 = contract_address.get_address_groups(CREATOR_ADDR());
+    let has_share_in_group1 = contract_address.group_address_has_shares_in(USER3_ADDR());
+    let has_share_in_group2 = contract_address.group_address_has_shares_in(USER1_ADDR());
+    let has_share_in_group3 = contract_address.group_address_has_shares_in(USER2_ADDR());
+    let has_share_in_group4 = contract_address.group_address_has_shares_in(CREATOR_ADDR());
 
     assert(has_share_in_group1.len() == 1, 'has share in only one group');
     assert(has_share_in_group2.len() == 2, 'has share in only two group');
@@ -637,7 +637,7 @@ fn test_approve_group_update_success() {
     assert(*group_members.at(1).percentage == 25, 'User3 percentage not updated');
 
     // check how number of group an address is part of
-    let has_share_in_group = contract_address.get_address_groups(USER3_ADDR());
+    let has_share_in_group = contract_address.group_address_has_shares_in(USER3_ADDR());
     assert(has_share_in_group.len() == 1, 'has share in only one group');
 }
 
