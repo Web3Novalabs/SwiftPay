@@ -3,7 +3,6 @@ use contract::base::errors::{
     ERR_DUPLICATE_ADDRESS, ERR_GROUP_NOT_FOUND, ERR_INVALID_PERCENTAGE_SUM, ERR_TOO_FEW_MEMBERS,
     ERR_UNAUTHORIZED,
 };
-use starknet::{ClassHash, ContractAddress};
 use contract::base::types::GroupMember;
 use contract::interfaces::iautoshare::{IAutoShareDispatcher, IAutoShareDispatcherTrait};
 use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
@@ -11,12 +10,15 @@ use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address,
     stop_cheat_caller_address,
 };
+use starknet::{ClassHash, ContractAddress};
+use crate::test_util::{
+    ADMIN_ADDR, CREATOR_ADDR, EMERGENCY_WITHDRAW_ADDR, ONE_STRK, TOKEN_ADDR, USER1_ADDR, USER2_ADDR,
+    USER3_ADDR, deploy_autoshare_contract, group_member_two,
+};
 
-use
-crate::test_util::{ADMIN_ADDR,CREATOR_ADDR,EMERGENCY_WITHDRAW_ADDR,TOKEN_ADDR,USER1_ADDR,USER2_ADDR,USER3_ADDR,deploy_autoshare_contract,ONE_STRK,group_member_two};
-
+// =========== create group ============
 #[test]
-fn test_create_group_success() {
+fn test_create_group_and_withdraw_success() {
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let token = erc20_dispatcher.contract_address;
     let mut members = group_member_two();
@@ -106,6 +108,114 @@ fn test_create_group_duplicate_address() {
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
+// ============ top group subscription ============
+#[test]
+fn test_top_subscription_success() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
+    let mut members = group_member_two();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    erc20_dispatcher.transfer(USER1_ADDR(), 500000000000000000000000);
+    erc20_dispatcher.transfer(USER2_ADDR(), 500000000000000000000000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+
+    contract_address.create_group("TestGroup", members, token, 2);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    let group_address = contract_address.get_group_address(1);
+
+    let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_after == 2000000000000000000, '1 balance not up to date');
+
+    // asset that the main contract has been set in the child contract
+    let child_contract_instance = IAutoshareChildDispatcher { contract_address: group_address };
+    let main_contract_address = child_contract_instance.get_main_contract_address();
+    assert(main_contract_address == contract_address.contract_address, 'main contract not set');
+
+    // top up group subscription plan by creator
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, ONE_STRK * 10);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.top_subscription(1, 10);
+    stop_cheat_caller_address(contract_address.contract_address);
+    let usage1 = contract_address.get_group_usage_count(1);
+    assert(usage1 == 12, 'usage count shoulb be 12');
+
+    // top up group subscription plan by member
+    start_cheat_caller_address(erc20_dispatcher.contract_address, USER1_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, ONE_STRK * 10);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
+    contract_address.top_subscription(1, 4);
+    stop_cheat_caller_address(contract_address.contract_address);
+    let usage1 = contract_address.get_group_usage_count(1);
+    assert(usage1 == 16, 'usage count shoulb be 12');
+
+    // top up group subscription plan by member
+    start_cheat_caller_address(erc20_dispatcher.contract_address, USER2_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, ONE_STRK * 10);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    start_cheat_caller_address(contract_address.contract_address, USER2_ADDR());
+    contract_address.top_subscription(1, 4);
+    stop_cheat_caller_address(contract_address.contract_address);
+    let usage1 = contract_address.get_group_usage_count(1);
+    assert(usage1 == 20, 'usage count shoulb be 12');
+}
+
+#[test]
+#[should_panic(expected: ('Only creator or member',))]
+fn test_top_subscription_only_creator_or_member() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
+    let mut members = group_member_two();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+
+    contract_address.create_group("TestGroup", members, token, 2);
+    stop_cheat_caller_address(contract_address.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, USER3_ADDR());
+    contract_address.top_subscription(1, 10);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('must be greater than 0',))]
+fn test_top_subscription_invalid_usage_time() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+    let token = erc20_dispatcher.contract_address;
+    let mut members = group_member_two();
+    let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
+    assert(contract_balance_before == 0, 'balance not up to date');
+
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher
+        .approve(contract_address.contract_address, 100_000_000_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+
+    contract_address.create_group("TestGroup", members, token, 2);
+    stop_cheat_caller_address(contract_address.contract_address);
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    contract_address.top_subscription(1, 0);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
 #[test]
 fn test_get_group_success() {
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
@@ -169,8 +279,7 @@ fn test_get_group_success() {
 fn test_upgradability() {
     // first declaration of AutoShare contract
     let contract = declare("AutoShare").unwrap().contract_class();
-    let child_contract: ClassHash =
-    *declare("AutoshareChild").unwrap().contract_class().class_hash;
+    let child_contract: ClassHash = *declare("AutoshareChild").unwrap().contract_class().class_hash;
 
     let constructor_calldata = array![
         ADMIN_ADDR().into(),
@@ -488,8 +597,7 @@ fn test_request_group_update_duplicate_address() {
 }
 
 #[test]
-// #[should_panic(expected: ('caller is not a group member',))]
-fn test_request_group_update_not_member() {
+fn test_request_group_update_success() {
     let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
     let token = erc20_dispatcher.contract_address;
 
@@ -512,12 +620,22 @@ fn test_request_group_update_not_member() {
 
     // Try to request update as creator but not member (USER3 is creator but not in members list)
     let mut new_members = ArrayTrait::new();
-    new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
-    new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: USER3_ADDR(), percentage: 50 });
+    new_members.append(GroupMember { addr: EMERGENCY_WITHDRAW_ADDR(), percentage: 50 });
 
     start_cheat_caller_address(contract_address.contract_address, USER3_ADDR());
     contract_address.request_group_update(1, "UpdatedGroup", new_members);
     stop_cheat_caller_address(contract_address.contract_address);
+
+    let group = contract_address.get_group(1);
+    assert(group.name == "UpdatedGroup", 'Wrong group name');
+
+    let group_members = contract_address.get_group_member(1);
+    assert(group_members.len() == 2, 'len not 2');
+    assert(*group_members.at(0).addr == USER3_ADDR(), 'user3 not in group');
+    assert(*group_members.at(1).addr == EMERGENCY_WITHDRAW_ADDR(), 'EMERGENCY_ADDR not in group');
+    assert(*group_members.at(0).percentage == 50, 'creator percentage not updated');
+    assert(*group_members.at(1).percentage == 50, 'User3 percentage not updated');
 }
 
 #[test]
@@ -656,22 +774,21 @@ fn test_execute_group_update_not_creator() {
     new_members.append(GroupMember { addr: USER1_ADDR(), percentage: 50 });
     new_members.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
 
-    start_cheat_caller_address(contract_address.contract_address,  USER2_ADDR());
+    start_cheat_caller_address(contract_address.contract_address, USER2_ADDR());
     contract_address.request_group_update(1, "UpdatedGroup", new_members);
     stop_cheat_caller_address(contract_address.contract_address);
-
     // start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    // contract_address.approve_group_update(1);
-    // stop_cheat_caller_address(contract_address.contract_address);
+// contract_address.approve_group_update(1);
+// stop_cheat_caller_address(contract_address.contract_address);
 
     // start_cheat_caller_address(contract_address.contract_address, USER2_ADDR());
-    // contract_address.approve_group_update(1);
-    // stop_cheat_caller_address(contract_address.contract_address);
+// contract_address.approve_group_update(1);
+// stop_cheat_caller_address(contract_address.contract_address);
 
     // // Try to execute as non-creator
-    // start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
-    // contract_address.execute_group_update(1);
-    // stop_cheat_caller_address(contract_address.contract_address);
+// start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
+// contract_address.execute_group_update(1);
+// stop_cheat_caller_address(contract_address.contract_address);
 }
 
 #[test]
@@ -701,11 +818,10 @@ fn test_execute_group_update_not_completed() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     contract_address.request_group_update(1, "UpdatedGroup", new_members);
     stop_cheat_caller_address(contract_address.contract_address);
-
     // // Try to execute without approvals
-    // start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    // contract_address.execute_group_update(1);
-    // stop_cheat_caller_address(contract_address.contract_address);
+// start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+// contract_address.execute_group_update(1);
+// stop_cheat_caller_address(contract_address.contract_address);
 }
 
 #[test]
@@ -726,11 +842,10 @@ fn test_execute_group_update_no_pending_update() {
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
     contract_address.create_group("TestGroup", members, token, 2);
     stop_cheat_caller_address(contract_address.contract_address);
-
     // // Try to execute without any update request
-    // start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    // contract_address.execute_group_update(1);
-    // stop_cheat_caller_address(contract_address.contract_address);
+// start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+// contract_address.execute_group_update(1);
+// stop_cheat_caller_address(contract_address.contract_address);
 }
 
 #[test]
@@ -837,6 +952,14 @@ fn test_set_group_usage_fee() {
 
     let group_usage_fee = contract_address.get_group_usage_fee();
     assert(group_usage_fee == 2_000_000_000_000_000_000, 'Group usage fee should be 2');
+}
+
+#[test]
+#[should_panic(expected: ('Only admin allowed',))]
+fn test_set_group_usage_fee_error() {
+    let (contract_address, _) = deploy_autoshare_contract();
+    start_cheat_caller_address(contract_address.contract_address, EMERGENCY_WITHDRAW_ADDR());
+    contract_address.set_group_usage_fee(2_000_000_000_000_000_000);
 }
 
 #[test]
@@ -1029,6 +1152,67 @@ fn test_new_impl_pay_logic_should_panic_if_usage_limit_reached() {
     contract_address.pay(group_address);
     stop_cheat_caller_address(contract_address.contract_address);
 }
+
+#[test]
+#[should_panic(expected: ('not creator, member or admin',))]
+fn test_new_impl_pay_logic_should_panic_not_admin() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 1_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    // create group
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // send 1000 strk to the group
+    let group_address = contract_address.get_group_address(1);
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    // pay to group members
+    start_cheat_caller_address(contract_address.contract_address, USER3_ADDR());
+    contract_address.pay(group_address);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('no payment made',))]
+fn test_new_impl_pay_logic_should_panic_no_payment_made() {
+    let (contract_address, erc20_dispatcher) = deploy_autoshare_contract();
+
+    // Create a group
+    let mut members = ArrayTrait::new();
+    start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    erc20_dispatcher.approve(contract_address.contract_address, 1_000_000_000_000_000_000);
+    stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    // create group
+    start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
+    members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
+    members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
+    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    stop_cheat_caller_address(contract_address.contract_address);
+
+    // // send 1000 strk to the group
+    let group_address = contract_address.get_group_address(1);
+    // start_cheat_caller_address(erc20_dispatcher.contract_address, CREATOR_ADDR());
+    // erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000);
+    // stop_cheat_caller_address(erc20_dispatcher.contract_address);
+
+    // pay to group members
+    start_cheat_caller_address(contract_address.contract_address, ADMIN_ADDR());
+    contract_address.pay(group_address);
+    stop_cheat_caller_address(contract_address.contract_address);
+}
+
 
 #[test]
 fn test_top_subscription_function() {

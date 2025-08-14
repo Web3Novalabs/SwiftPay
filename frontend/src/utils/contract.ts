@@ -4,7 +4,9 @@ import { SWIFTSWAP_ABI } from "../abi/swiftswap_abi";
 // Contract configuration
 export const CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-
+  export const NEW_CONTRACT_ADDRESS =
+    "0x058019ce428bbcb9447ea3bb70315100c1320ad12a484d8c49e0876a2a203106";
+  ;
 
   export const myProvider = new RpcProvider({
     nodeUrl: process.env.NEXT_PUBLIC_RPC_URL,

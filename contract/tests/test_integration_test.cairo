@@ -3,8 +3,8 @@ use contract::interfaces::iautoshare::IAutoShareDispatcherTrait;
 use openzeppelin::token::erc20::interface::IERC20DispatcherTrait;
 use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
 use crate::test_util::{
-    ADMIN_ADDR, CREATOR_ADDR, ONE_STRK, USER1_ADDR, USER2_ADDR, deploy_autoshare_contract,
-    group_member_ten, group_member_two,EMERGENCY_WITHDRAW_ADDR
+    ADMIN_ADDR, CREATOR_ADDR, EMERGENCY_WITHDRAW_ADDR, ONE_STRK, USER1_ADDR, USER2_ADDR,
+    deploy_autoshare_contract, group_member_ten, group_member_two,
 };
 
 
@@ -183,7 +183,8 @@ fn test_all_contract_flow_success() {
     // get group balance
     let group_balance = contract_address.get_group_balance(group1_address);
     assert(group_balance == 2_000_000_000_000_000_000_000, 'balance not upto date');
-    let emergency_withdraw_address_balance_after = erc20_dispatcher.balance_of(EMERGENCY_WITHDRAW_ADDR());
+    let emergency_withdraw_address_balance_after = erc20_dispatcher
+        .balance_of(EMERGENCY_WITHDRAW_ADDR());
     println!("usage233 7{}", emergency_withdraw_address_balance_after);
     // users balance before pay
     let user1 = erc20_dispatcher.balance_of(USER1_ADDR());
@@ -217,7 +218,8 @@ fn test_all_contract_flow_success() {
 
     let usage1 = contract_address.get_group_usage_count(1);
     assert(usage1 == 28, 'usage count shoulb be 28');
-    let emergency_withdraw_address_balance_before = erc20_dispatcher.balance_of(EMERGENCY_WITHDRAW_ADDR());
+    let emergency_withdraw_address_balance_before = erc20_dispatcher
+        .balance_of(EMERGENCY_WITHDRAW_ADDR());
     // widthdraw token from contract
     let contract_balance_before = erc20_dispatcher.balance_of(contract_address.contract_address);
 
@@ -228,6 +230,11 @@ fn test_all_contract_flow_success() {
     let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
     assert(contract_balance_after == 0, 'balance not up to date');
 
-    let emergency_withdraw_address_balance_after = erc20_dispatcher.balance_of(EMERGENCY_WITHDRAW_ADDR());
-    assert(emergency_withdraw_address_balance_after ==emergency_withdraw_address_balance_before + contract_balance_before, 'balance not up to date');
+    let emergency_withdraw_address_balance_after = erc20_dispatcher
+        .balance_of(EMERGENCY_WITHDRAW_ADDR());
+    assert(
+        emergency_withdraw_address_balance_after == emergency_withdraw_address_balance_before
+            + contract_balance_before,
+        'balance not up to date',
+    );
 }
