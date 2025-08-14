@@ -33,13 +33,7 @@ export const groupMembers = pgTable("group_members", {
   joined_at: timestamp("joined_at").defaultNow(),
 });
 
-// Group addresses mapping
-export const groupAddresses = pgTable("group_addresses", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  group_id: bigint("group_id", { mode: "number" }).notNull().unique(),
-  child_contract_address: text("child_contract_address").notNull().unique(), // ContractAddress as text
-  created_at: timestamp("created_at").defaultNow(),
-});
+
 
 // Update requests table
 export const updateRequests = pgTable("update_requests", {

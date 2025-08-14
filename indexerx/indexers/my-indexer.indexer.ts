@@ -9,7 +9,6 @@ import { eq } from "drizzle-orm";
 import {
   groups,
   groupMembers,
-  groupAddresses,
   updateRequests,
   updateRequestNewMembers,
   updateApprovals,
@@ -25,7 +24,6 @@ const drizzleDb = drizzle({
   schema: {
     groups,
     groupMembers,
-    groupAddresses,
     updateRequests,
     updateRequestNewMembers,
     updateApprovals,
@@ -335,11 +333,7 @@ async function handleGroupCreated(db: any, eventData: any, eventRecord: any) {
       status: "active",
     });
 
-    // Insert group address mapping
-    await db.insert(groupAddresses).values({
-      group_id: groupId,
-      child_contract_address: childContractAddress,
-    });
+
 
     // Store event
     await db.insert(events).values(eventRecord);

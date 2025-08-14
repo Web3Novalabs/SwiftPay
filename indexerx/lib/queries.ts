@@ -2,7 +2,6 @@ import { eq, and, desc, asc, sql } from "drizzle-orm";
 import {
   groups,
   groupMembers,
-  groupAddresses,
   updateRequests,
   updateRequestNewMembers,
   updateApprovals,
@@ -95,23 +94,7 @@ export const groupQueries = {
       .orderBy(desc(groups.created_at));
   },
 
-  // Get group address mapping
-  async getGroupAddress(db: any, groupId: number) {
-    return db.query.groupAddresses.findFirst({
-      where: eq(groupAddresses.group_id, groupId),
-    });
-  },
 
-  // Get group by child contract address
-  async getGroupByChildAddress(db: any, childAddress: string) {
-    const addressMapping = await db.query.groupAddresses.findFirst({
-      where: eq(groupAddresses.child_contract_address, childAddress),
-    });
-
-    if (!addressMapping) return null;
-
-    return this.getGroupById(db, addressMapping.group_id);
-  },
 };
 
 // Update request queries
