@@ -1,0 +1,41 @@
+{
+  "name": "apibara-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "apibara prepare",
+    "dev": "apibara dev",
+    "start": "apibara start",
+    "build": "apibara build",
+    "typecheck": "tsc --noEmit",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:migrate": "drizzle-kit migrate",
+    "api:dev": "tsx watch api/server.ts",
+    "api:start": "tsx api/server.ts",
+    "setup:db": "tsx scripts/setup-db.ts",
+    "test:config": "tsx scripts/test-config.ts",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "@apibara/protocol": "next",
+    "apibara": "next",
+    "@apibara/starknet": "next",
+    "@apibara/plugin-drizzle": "next",
+    "drizzle-orm": "^0.40.1",
+    "@electric-sql/pglite": "^0.2.17",
+    "drizzle-kit": "^0.29.0",
+    "pg": "^8.13.1",
+    "postgres": "^3.4.4",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.2",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "typescript": "^5.6.2",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.7.0"
+  }
+}
