@@ -54,6 +54,10 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
         {
           address: contractAddress as `0x${string}`,
         },
+        // Listen for ERC20 Transfer events from any token contract
+        {
+          keys: ["0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108c12e6198e9c"], // ERC20 Transfer event selector
+        },
       ],
     },
     plugins: [
@@ -155,6 +159,7 @@ async function processEvent(
     // For now, let's try to identify events by their data structure
     // GroupCreated typically has 6 parameters: group_id, creator, name, group_address, ?, ?
     // GroupPaid typically has 6 parameters: group_id, amount, paid_by, paid_at, members, ?
+    // ERC20 Transfer has 3 parameters: from, to, amount
     if (event.data && event.data.length === 6) {
       // Based on the pattern we observed, these are likely GroupCreated events
       // The first key 0x00839204f70183a4f6833c236b5e21b7309088e1defb43d00a9945ac05fdb27d
@@ -169,6 +174,15 @@ async function processEvent(
       eventName = "GroupCreated";
     } else if (event.data && event.data.length === 5) {
       eventName = "GroupPaid";
+    } else if (event.data && event.data.length === 3) {
+      // ERC20 Transfer event: from, to, amount
+      // Check if this is a Transfer event by looking at the event key
+      if (eventKeyString === "0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108c12e6198e9c") {
+        eventName = "TokenTransfer";
+        console.log("✅ Identified ERC20 Transfer event");
+      } else {
+        eventName = "UnknownEvent";
+      }
     } else {
       eventName = "UnknownEvent";
     }
@@ -204,6 +218,16 @@ async function processEvent(
             paid_at: event.data[3],
             members: event.data[4]
           };
+        } else if (eventName === "TokenTransfer") {
+          // ERC20 Transfer event: (from, to, amount)
+          // The token_address is the contract address that emitted this event
+          eventData = {
+            from: event.data[0],
+            to: event.data[1],
+            amount: event.data[2],
+            token_address: event.from_address || "unknown"
+          };
+          console.log("🔍 Parsed TokenTransfer event:", eventData);
         }
       }
   }
