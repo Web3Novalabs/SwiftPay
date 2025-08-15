@@ -15,6 +15,7 @@
     "api:start": "tsx api/server.ts",
     "setup:db": "tsx scripts/setup-db.ts",
     "test:config": "tsx scripts/test-config.ts",
+    "test:implementation": "tsx scripts/test-implementation.ts",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {

@@ -3,7 +3,10 @@ import { useLogger } from "apibara/plugins";
 import { drizzle, drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
 import { StarknetStream } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+
+// Import contract utilities
+import { ContractUtils } from "../lib/contract-utils";
 
 // Import all schema tables
 import {
@@ -17,6 +20,8 @@ import {
   groupPayments,
   contractState,
   cursorTable,
+  deployedGroups,
+  tokenTransfers,
 } from "../lib/schema";
 
 // Create drizzle instance
@@ -32,6 +37,8 @@ const drizzleDb = drizzle({
     groupPayments,
     contractState,
     cursorTable,
+    deployedGroups,
+    tokenTransfers,
   },
 });
 
@@ -65,12 +72,19 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
       
       const { db } = useDrizzleStorage(drizzleDb);
 
+      let eventErrors = 0;
       for (const event of blockEvents) {
         try {
-          await processEvent(db, event, header.blockNumber, header.timestamp);
+          await processEvent(db, event, header.blockNumber, BigInt(header.timestamp.getTime()));
         } catch (error) {
-          logger.error(`Error processing event: ${error}`);
+          eventErrors++;
+          logger.error(`Error processing event ${eventErrors}/${blockEvents.length}: ${error}`);
+          // Continue processing other events instead of failing the entire block
         }
+      }
+      
+      if (eventErrors > 0) {
+        logger.warn(`Processed block with ${eventErrors} event errors out of ${blockEvents.length} total events`);
       }
 
       // Update cursor - handle the cursor properly
@@ -109,7 +123,7 @@ async function processEvent(
   // - keys[0] contains the event name hash
   // - data[] contains the event parameters in order
   let eventName = "UnknownEvent";
-  let eventData = {};
+  let eventData: any = {};
   
   if (event.keys && event.keys.length > 0) {
     // The first key is the event name as a Fel252 (Cairo field element)
@@ -135,6 +149,8 @@ async function processEvent(
     }
     
     console.log("Event key (Fel252):", eventKeyString);
+    console.log("🔍 Event keys array:", event.keys);
+    console.log("🔍 Event data array:", event.data);
     
     // For now, let's try to identify events by their data structure
     // GroupCreated typically has 6 parameters: group_id, creator, name, group_address, ?, ?
@@ -157,34 +173,39 @@ async function processEvent(
       eventName = "UnknownEvent";
     }
     
-    // Parse event data from the data array
-    if (event.data && event.data.length > 0) {
-      // Convert the data array to a more readable format
-      eventData = {
-        raw_data: event.data,
-        // For now, store the raw data and we can parse specific events
-      };
-      
-      // Parse specific event types based on their known structure
-      if (eventName === "GroupCreated") {
-        // GroupCreated event: (group_id, creator, name, group_address)
+          // Parse event data from the data array and keys array
+      if (event.data && event.data.length > 0) {
+        // Convert the data array to a more readable format
         eventData = {
-          group_id: event.data[0],
-          creator: event.data[1], 
-          name: event.data[2],
-          group_address: event.data[3]
+          raw_data: event.data,
+          // For now, store the raw data and we can parse specific events
         };
-      } else if (eventName === "GroupPaid") {
-        // GroupPaid event: (group_id, amount, paid_by, paid_at, members)
-        eventData = {
-          group_id: event.data[0],
-          amount: event.data[1],
-          paid_by: event.data[2],
-          paid_at: event.data[3],
-          members: event.data[4]
-        };
+        
+        // Parse specific event types based on their known structure
+        if (eventName === "GroupCreated") {
+          // GroupCreated event structure:
+          // data[0] = group_id
+          // data[1] = creator  
+          // data[2] = name
+          // keys[1] = group_address (deployed contract address)
+          eventData = {
+            group_id: event.data[0],
+            creator: event.data[1], 
+            name: event.data[2],
+            group_address: event.keys && event.keys.length > 1 ? event.keys[1] : event.data[3]
+          };
+          console.log("🔍 Parsed GroupCreated event - group_address from keys[1]:", eventData.group_address);
+        } else if (eventName === "GroupPaid") {
+          // GroupPaid event: (group_id, amount, paid_by, paid_at, members)
+          eventData = {
+            group_id: event.data[0],
+            amount: event.data[1],
+            paid_by: event.data[2],
+            paid_at: event.data[3],
+            members: event.data[4]
+          };
+        }
       }
-    }
   }
   
   // Extract transaction hash
@@ -227,7 +248,7 @@ async function processEvent(
   try {
     switch (eventName) {
       case "GroupCreated":
-        await handleGroupCreated(db, eventData, eventRecord);
+        await handleGroupCreated(db, eventData, eventRecord, blockNumber, timestamp);
         break;
       case "GroupPaid":
         await handleGroupPaid(db, eventData, eventRecord);
@@ -240,6 +261,9 @@ async function processEvent(
         break;
       case "GroupUpdated":
         await handleGroupUpdated(db, eventData, eventRecord);
+        break;
+      case "TokenTransfer":
+        await handleTokenTransfer(db, eventData, eventRecord, blockNumber, timestamp);
         break;
       default:
         // Store unknown events
@@ -257,7 +281,7 @@ async function processEvent(
   }
 }
 
-async function handleGroupCreated(db: any, eventData: any, eventRecord: any) {
+async function handleGroupCreated(db: any, eventData: any, eventRecord: any, blockNumber: bigint, timestamp: bigint) {
   try {
     const { group_address, group_id, creator, name } = eventData;
     
@@ -324,16 +348,53 @@ async function handleGroupCreated(db: any, eventData: any, eventRecord: any) {
     // Update event record with group_id
     eventRecord.group_id = groupId;
     
-    // Insert group
-    await db.insert(groups).values({
-      group_id: groupId,
-      name: groupName,
-      is_paid: false,
-      creator: creatorAddress,
-      status: "active",
-    });
+    // Check if group already exists
+    const existingGroup = await db.select().from(groups).where(eq(groups.group_id, groupId)).limit(1);
+    
+    if (existingGroup.length === 0) {
+      // Insert new group
+      await db.insert(groups).values({
+        group_id: groupId,
+        name: groupName,
+        is_paid: false,
+        creator: creatorAddress,
+        status: "active",
+      });
+      console.log(`✅ Inserted new group ${groupId}`);
+    } else {
+      // Update existing group
+      await db.update(groups).set({
+        name: groupName,
+        creator: creatorAddress,
+        updated_at: new Date(),
+      }).where(eq(groups.group_id, groupId));
+      console.log(`🔄 Updated existing group ${groupId}`);
+    }
 
-
+    // Check if deployed group already exists
+    const existingDeployedGroup = await db.select().from(deployedGroups).where(eq(deployedGroups.group_id, groupId)).limit(1);
+    
+    if (existingDeployedGroup.length === 0) {
+      // Insert new deployed group
+      await db.insert(deployedGroups).values({
+        group_id: groupId,
+        deployed_address: childContractAddress,
+        is_active: true,
+        deployment_block: Number(blockNumber),
+        deployment_timestamp: Number(timestamp),
+      });
+      console.log(`✅ Inserted new deployed group ${groupId} at ${childContractAddress}`);
+    } else {
+      // Update existing deployed group
+      await db.update(deployedGroups).set({
+        deployed_address: childContractAddress,
+        is_active: true,
+        deployment_block: Number(blockNumber),
+        deployment_timestamp: Number(timestamp),
+        updated_at: new Date(),
+      }).where(eq(deployedGroups.group_id, groupId));
+      console.log(`🔄 Updated existing deployed group ${groupId} at ${childContractAddress}`);
+    }
 
     // Store event
     await db.insert(events).values(eventRecord);
@@ -477,3 +538,55 @@ async function handleGroupUpdated(db: any, eventData: any, eventRecord: any) {
   // Store event
   await db.insert(events).values(eventRecord);
 }
+
+async function handleTokenTransfer(db: any, eventData: any, eventRecord: any, blockNumber: bigint, timestamp: bigint) {
+  try {
+    const { from, to, amount, token_address } = eventData;
+    
+    console.log("Processing TokenTransfer event:", eventData);
+    
+    // Check if the recipient address is a deployed group address
+    const deployedGroup = await db.select().from(deployedGroups).where(eq(deployedGroups.deployed_address, to)).limit(1);
+    const deployedGroupData = deployedGroup[0];
+    
+    if (deployedGroupData) {
+      console.log(`Token transfer detected to group ${deployedGroupData.group_id} at address ${to}`);
+      
+      // Store the token transfer
+      await db.insert(tokenTransfers).values({
+        group_id: deployedGroupData.group_id,
+        deployed_address: to,
+        token_address: token_address,
+        amount: Number(amount),
+        from_address: from,
+        transaction_hash: eventRecord.transaction_hash,
+        block_number: Number(blockNumber),
+        block_timestamp: Number(timestamp),
+        is_processed: false,
+      });
+      
+      // Trigger payment to group members
+      const paymentResult = await ContractUtils.triggerGroupPayment(db, deployedGroupData.group_id, to, token_address, amount);
+      
+      // Mark the transfer as processed
+      await db
+        .update(tokenTransfers)
+        .set({ 
+          is_processed: true,
+          payment_tx_hash: paymentResult.transactionHash || eventRecord.transaction_hash,
+        })
+        .where(eq(tokenTransfers.transaction_hash, eventRecord.transaction_hash));
+      
+      console.log(`Payment triggered for group ${deployedGroupData.group_id}`);
+    }
+    
+    // Store event
+    await db.insert(events).values(eventRecord);
+    
+  } catch (error) {
+    console.error("Error in handleTokenTransfer:", error);
+    throw error;
+  }
+}
+
+

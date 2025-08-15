@@ -112,3 +112,31 @@ export const cursorTable = pgTable("cursor_table", {
   endCursor: bigint("end_cursor", { mode: "number" }),
   uniqueKey: text("unique_key").unique(),
 });
+
+// Deployed groups table to track deployed group contract addresses
+export const deployedGroups = pgTable("deployed_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  group_id: bigint("group_id", { mode: "number" }).notNull().unique(),
+  deployed_address: text("deployed_address").notNull(), // The deployed group contract address
+  is_active: boolean("is_active").notNull().default(true),
+  deployment_block: bigint("deployment_block", { mode: "number" }).notNull(),
+  deployment_timestamp: bigint("deployment_timestamp", { mode: "number" }).notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Token transfers table to track incoming tokens to group addresses
+export const tokenTransfers = pgTable("token_transfers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  group_id: bigint("group_id", { mode: "number" }).notNull(),
+  deployed_address: text("deployed_address").notNull(), // Group contract address that received tokens
+  token_address: text("token_address").notNull(), // ERC20 token contract address
+  amount: bigint("amount", { mode: "number" }).notNull(),
+  from_address: text("from_address").notNull(), // Address that sent the tokens
+  transaction_hash: text("transaction_hash").notNull(),
+  block_number: bigint("block_number", { mode: "number" }).notNull(),
+  block_timestamp: bigint("block_timestamp", { mode: "number" }).notNull(),
+  is_processed: boolean("is_processed").notNull().default(false), // Whether payment was triggered
+  payment_tx_hash: text("payment_tx_hash"), // Hash of the payment transaction if triggered
+  created_at: timestamp("created_at").defaultNow(),
+});
