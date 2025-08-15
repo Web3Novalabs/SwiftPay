@@ -17,6 +17,7 @@
     "test:config": "tsx scripts/test-config.ts",
     "test:implementation": "tsx scripts/test-implementation.ts",
     "test:token-monitoring": "tsx scripts/test-token-monitoring.ts",
+    "test:erc20-simulation": "tsx scripts/test-erc20-simulation.ts",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {

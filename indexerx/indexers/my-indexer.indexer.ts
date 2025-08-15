@@ -1,7 +1,7 @@
 import { defineIndexer } from "apibara/indexer";
 import { useLogger } from "apibara/plugins";
 import { drizzle, drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
-import { StarknetStream } from "@apibara/starknet";
+import { StarknetStream, getSelector } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
 import { eq, and } from "drizzle-orm";
 
@@ -51,13 +51,15 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     startingBlock: BigInt(startingBlock),
     filter: {
       events: [
+        // Listen for GroupCreation events from AutoShare contract
         {
-          address: contractAddress as `0x${string}`,
+          address: "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d",
+          keys: ["0x00839204f70183a4f6833c236b5e21b7309088e1defb43d00a9945ac05fdb27d"]
         },
-        // Listen for ERC20 Transfer events from any token contract
+        // Listen for ERC20 Transfer events to any contract (we'll filter by recipient in code)
         {
-          keys: ["0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108c12e6198e9c"], // ERC20 Transfer event selector
-        },
+          keys: [getSelector("Transfer")]
+        }
       ],
     },
     plugins: [
@@ -120,192 +122,67 @@ async function processEvent(
   blockNumber: bigint,
   timestamp: bigint
 ) {
-  // Debug: Log the raw event structure
-  console.log("Raw event object:", JSON.stringify(event, null, 2));
-  
-  // Starknet events have a different structure:
-  // - keys[0] contains the event name hash
-  // - data[] contains the event parameters in order
-  let eventName = "UnknownEvent";
-  let eventData: any = {};
-  
-  if (event.keys && event.keys.length > 0) {
-    // The first key is the event name as a Fel252 (Cairo field element)
-    const eventNameKey = event.keys[0];
-    
-    // Map known Fel252 event keys to event names
-    // These are the Fel252 values of the event names from the Cairo contract
-    // We need to get the actual Fel252 values from the contract events
-    const eventNameMap: { [key: string]: string } = {
-      // These are example Fel252 values - we need to get the actual ones from the contract
-      // For now, let's try to decode the first key to see what we get
-    };
-    
-    // Convert Fel252 to string for comparison
-    let eventKeyString: string;
-    if (typeof eventNameKey === 'string') {
-      eventKeyString = eventNameKey;
-    } else if (typeof eventNameKey === 'object' && eventNameKey.x0 !== undefined) {
-      // Handle Starknet field element format
-      eventKeyString = `0x${eventNameKey.x0.toString(16)}`;
-    } else {
-      eventKeyString = String(eventNameKey);
-    }
-    
-    console.log("Event key (Fel252):", eventKeyString);
-    console.log("🔍 Event keys array:", event.keys);
-    console.log("🔍 Event data array:", event.data);
-    
-    // For now, let's try to identify events by their data structure
-    // GroupCreated typically has 6 parameters: group_id, creator, name, group_address, ?, ?
-    // GroupPaid typically has 6 parameters: group_id, amount, paid_by, paid_at, members, ?
-    // ERC20 Transfer has 3 parameters: from, to, amount
-    if (event.data && event.data.length === 6) {
-      // Based on the pattern we observed, these are likely GroupCreated events
-      // The first key 0x00839204f70183a4f6833c236b5e21b7309088e1defb43d00a9945ac05fdb27d
-      // appears to be the GroupCreated event identifier
-      if (eventKeyString === "0x00839204f70183a4f6833c236b5e21b7309088e1defb43d00a9945ac05fdb27d") {
-        eventName = "GroupCreated";
-        console.log("✅ Identified GroupCreated event by Fel252 key");
-      } else {
-        eventName = "UnknownEvent";
-      }
-    } else if (event.data && event.data.length === 4) {
-      eventName = "GroupCreated";
-    } else if (event.data && event.data.length === 5) {
-      eventName = "GroupPaid";
-    } else if (event.data && event.data.length === 3) {
-      // ERC20 Transfer event: from, to, amount
-      // Check if this is a Transfer event by looking at the event key
-      if (eventKeyString === "0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108c12e6198e9c") {
-        eventName = "TokenTransfer";
-        console.log("✅ Identified ERC20 Transfer event");
-      } else {
-        eventName = "UnknownEvent";
-      }
-    } else {
-      eventName = "UnknownEvent";
-    }
-    
-          // Parse event data from the data array and keys array
-      if (event.data && event.data.length > 0) {
-        // Convert the data array to a more readable format
-        eventData = {
-          raw_data: event.data,
-          // For now, store the raw data and we can parse specific events
-        };
-        
-        // Parse specific event types based on their known structure
-        if (eventName === "GroupCreated") {
-          // GroupCreated event structure:
-          // data[0] = group_id
-          // data[1] = creator  
-          // data[2] = name
-          // keys[1] = group_address (deployed contract address)
-          eventData = {
-            group_id: event.data[0],
-            creator: event.data[1], 
-            name: event.data[2],
-            group_address: event.keys && event.keys.length > 1 ? event.keys[1] : event.data[3]
-          };
-          console.log("🔍 Parsed GroupCreated event - group_address from keys[1]:", eventData.group_address);
-        } else if (eventName === "GroupPaid") {
-          // GroupPaid event: (group_id, amount, paid_by, paid_at, members)
-          eventData = {
-            group_id: event.data[0],
-            amount: event.data[1],
-            paid_by: event.data[2],
-            paid_at: event.data[3],
-            members: event.data[4]
-          };
-        } else if (eventName === "TokenTransfer") {
-          // ERC20 Transfer event: (from, to, amount)
-          // The token_address is the contract address that emitted this event
-          eventData = {
-            from: event.data[0],
-            to: event.data[1],
-            amount: event.data[2],
-            token_address: event.from_address || "unknown"
-          };
-          console.log("🔍 Parsed TokenTransfer event:", eventData);
-        }
-      }
-  }
-  
-  // Extract transaction hash
-  let transactionHash = "";
-  if (event.transactionHash) {
-    transactionHash = event.transactionHash;
-  } else if (event.transaction_hash) {
-    transactionHash = event.transaction_hash;
-  } else if (event.tx_hash) {
-    transactionHash = event.tx_hash;
-  } else if (event.hash) {
-    transactionHash = event.hash;
-  }
-
-  // Validate that we have essential data
-  if (!eventName || eventName === "UnknownEvent") {
-    console.error("Could not determine event name from event:", event);
-    // Store as unknown event instead of failing
-    eventName = "UnknownEvent";
-  }
-
-  // Store the event record
-  const eventRecord = {
-    event_type: eventName,
-    group_id: null,
-    transaction_hash: transactionHash || "unknown",
-    block_number: Number(blockNumber),
-    block_timestamp: Number(timestamp),
-    event_data: JSON.stringify(eventData),
-  };
-
-  // Log the processed event for debugging
-  console.log(`Processing event: ${eventName}`, { 
-    eventData, 
-    transactionHash, 
-    blockNumber: Number(blockNumber),
-    timestamp: Number(timestamp)
-  });
-
   try {
-    switch (eventName) {
-      case "GroupCreated":
-        await handleGroupCreated(db, eventData, eventRecord, blockNumber, timestamp);
-        break;
-      case "GroupPaid":
-        await handleGroupPaid(db, eventData, eventRecord);
-        break;
-      case "GroupUpdateRequested":
-        await handleGroupUpdateRequested(db, eventData, eventRecord);
-        break;
-      case "GroupUpdateApproved":
-        await handleGroupUpdateApproved(db, eventData, eventRecord);
-        break;
-      case "GroupUpdated":
-        await handleGroupUpdated(db, eventData, eventRecord);
-        break;
-      case "TokenTransfer":
-        await handleTokenTransfer(db, eventData, eventRecord, blockNumber, timestamp);
-        break;
-      default:
-        // Store unknown events
-        console.log(`Storing unknown event: ${eventName}`);
-        await db.insert(events).values(eventRecord);
+    // Extract event key (first key in the keys array)
+    const eventKey = event.keys[0];
+    
+    // Only process events we care about
+    if (eventKey === "0x00839204f70183a4f6833c236b5e21b7309088e1defb43d00a9945ac05fdb27d") {
+      // GroupCreated event (Fel252 key)
+      console.log("✅ Processing GroupCreated event");
+      
+      const groupAddress = event.keys[1];
+      console.log("🔍 Parsed GroupCreated event - group_address from keys[1]:", groupAddress);
+      
+      const eventData = {
+        group_id: event.data[0],
+        creator: event.data[1],
+        name: event.data[2],
+        group_address: groupAddress
+      };
+
+      console.log("Processing event: GroupCreated", {
+        eventData,
+        transactionHash: event.transactionHash,
+        blockNumber,
+        timestamp
+      });
+
+      await handleGroupCreated(db, eventData, blockNumber, timestamp);
+      console.log("✅ GroupCreated event processed successfully");
     }
+    else if (eventKey === getSelector("Transfer")) {
+      // ERC20 Transfer event - check if recipient is a stored group address
+      const toAddress = event.data[1];
+      
+      // Check if this transfer is to one of our stored group addresses
+      const isGroupAddress = await ContractUtils.isDeployedGroupAddress(db, toAddress);
+      
+      if (isGroupAddress) {
+        console.log(`🎯 ERC20 Transfer to group address: ${toAddress}`);
+        
+        const eventData = {
+          from: event.data[0],
+          to: toAddress,
+          amount: event.data[2],
+          token_address: event.address,
+          transaction_hash: event.transactionHash
+        };
+
+        await handleTokenTransfer(db, eventData, blockNumber, timestamp);
+        console.log("✅ Token transfer to group processed successfully");
+      }
+      // Silently ignore transfers to non-group addresses
+    }
+    // Silently ignore all other events
+    
   } catch (error) {
-    console.error(`Error processing event ${eventName}:`, error);
-    // Still try to store the event record even if processing fails
-    try {
-      await db.insert(events).values(eventRecord);
-    } catch (insertError) {
-      console.error("Failed to store event record:", insertError);
-    }
+    console.error("❌ Error processing event:", error);
+    // Don't throw - just log and continue
   }
 }
 
-async function handleGroupCreated(db: any, eventData: any, eventRecord: any, blockNumber: bigint, timestamp: bigint) {
+async function handleGroupCreated(db: any, eventData: any, blockNumber: bigint, timestamp: bigint) {
   try {
     const { group_address, group_id, creator, name } = eventData;
     
@@ -369,9 +246,6 @@ async function handleGroupCreated(db: any, eventData: any, eventRecord: any, blo
       childContractAddress
     });
     
-    // Update event record with group_id
-    eventRecord.group_id = groupId;
-    
     // Check if group already exists
     const existingGroup = await db.select().from(groups).where(eq(groups.group_id, groupId)).limit(1);
     
@@ -420,174 +294,40 @@ async function handleGroupCreated(db: any, eventData: any, eventRecord: any, blo
       console.log(`🔄 Updated existing deployed group ${groupId} at ${childContractAddress}`);
     }
 
-    // Store event
-    await db.insert(events).values(eventRecord);
-    
-    console.log("Successfully processed GroupCreated event");
+    console.log("✅ GroupCreated event processed successfully");
   } catch (error) {
-    console.error("Error in handleGroupCreated:", error);
+    console.error("❌ Error in handleGroupCreated:", error);
     throw error;
   }
 }
 
-async function handleGroupPaid(db: any, eventData: any, eventRecord: any) {
-  const { group_id, amount, paid_by, paid_at, members } = eventData;
-  
-  // Update event record with group_id
-  eventRecord.group_id = Number(group_id);
-  
-  // Update group status
-  await db
-    .update(groups)
-    .set({ 
-      is_paid: true, 
-      status: "paid",
-    })
-    .where(eq(groups.group_id, Number(group_id)));
-
-  // Insert payment record
-  await db.insert(groupPayments).values({
-    group_id: Number(group_id),
-    amount: Number(amount),
-    paid_by: paid_by,
-    paid_at: Number(paid_at),
-    transaction_hash: eventRecord.transaction_hash,
-  });
-
-  // Store event
-  await db.insert(events).values(eventRecord);
-}
-
-async function handleGroupUpdateRequested(db: any, eventData: any, eventRecord: any) {
-  const { group_id, requester, new_name } = eventData;
-  
-  // Update event record with group_id
-  eventRecord.group_id = Number(group_id);
-  
-  // Insert update request
-  await db.insert(updateRequests).values({
-    group_id: Number(group_id),
-    new_name: new_name,
-    requester: requester,
-    fee_paid: true, // Assuming fee is paid when request is made
-    approval_count: 0,
-    is_completed: false,
-  });
-
-  // Set pending update flag
-  await db.insert(pendingUpdates).values({
-    group_id: Number(group_id),
-    has_pending_update: true,
-  }).onConflictDoUpdate({
-    target: pendingUpdates.group_id,
-    set: { 
-      has_pending_update: true,
-    },
-  });
-
-  // Update group status
-  await db
-    .update(groups)
-    .set({ 
-      status: "updating",
-    })
-    .where(eq(groups.group_id, Number(group_id)));
-
-  // Store event
-  await db.insert(events).values(eventRecord);
-}
-
-async function handleGroupUpdateApproved(db: any, eventData: any, eventRecord: any) {
-  const { group_id, approver, approval_count, total_members } = eventData;
-  
-  // Update event record with group_id
-  eventRecord.group_id = Number(group_id);
-  
-  // Insert or update approval
-  await db.insert(updateApprovals).values({
-    group_id: Number(group_id),
-    member_address: approver,
-    has_approved: true,
-  }).onConflictDoUpdate({
-    target: [updateApprovals.group_id, updateApprovals.member_address],
-    set: { 
-      has_approved: true,
-    },
-  });
-
-  // Update approval count in update request
-  await db
-    .update(updateRequests)
-    .set({ 
-      approval_count: Number(approval_count),
-    })
-    .where(eq(updateRequests.group_id, Number(group_id)));
-
-  // Store event
-  await db.insert(events).values(eventRecord);
-}
-
-async function handleGroupUpdated(db: any, eventData: any, eventRecord: any) {
-  const { group_id, old_name, new_name } = eventData;
-  
-  // Update event record with group_id
-  eventRecord.group_id = Number(group_id);
-  
-  // Update group with new name and reset status
-  await db
-    .update(groups)
-    .set({ 
-      name: new_name,
-      is_paid: false,
-      status: "active",
-    })
-    .where(eq(groups.group_id, Number(group_id)));
-
-  // Clear pending update flag
-  await db
-    .update(pendingUpdates)
-    .set({ 
-      has_pending_update: false,
-    })
-    .where(eq(pendingUpdates.group_id, Number(group_id)));
-
-  // Clear update request
-  await db
-    .update(updateRequests)
-    .set({ 
-      is_completed: true,
-    })
-    .where(eq(updateRequests.group_id, Number(group_id)));
-
-  // Store event
-  await db.insert(events).values(eventRecord);
-}
-
-async function handleTokenTransfer(db: any, eventData: any, eventRecord: any, blockNumber: bigint, timestamp: bigint) {
+async function handleTokenTransfer(db: any, eventData: any, blockNumber: bigint, timestamp: bigint) {
   try {
-    const { from, to, amount, token_address } = eventData;
+    const { from, to, amount, token_address, transaction_hash } = eventData;
     
-    console.log("Processing TokenTransfer event:", eventData);
+    console.log("🎯 Processing TokenTransfer event:", eventData);
     
     // Check if the recipient address is a deployed group address
     const deployedGroup = await db.select().from(deployedGroups).where(eq(deployedGroups.deployed_address, to)).limit(1);
     const deployedGroupData = deployedGroup[0];
     
     if (deployedGroupData) {
-      console.log(`Token transfer detected to group ${deployedGroupData.group_id} at address ${to}`);
+      console.log(`💰 Token transfer detected to group ${deployedGroupData.group_id} at address ${to}`);
       
       // Store the token transfer
-      await db.insert(tokenTransfers).values({
+      const transferResult = await db.insert(tokenTransfers).values({
         group_id: deployedGroupData.group_id,
         deployed_address: to,
         token_address: token_address,
         amount: Number(amount),
         from_address: from,
-        transaction_hash: eventRecord.transaction_hash,
+        transaction_hash: transaction_hash,
         block_number: Number(blockNumber),
         block_timestamp: Number(timestamp),
         is_processed: false,
-      });
+      }).returning();
+      
+      console.log(`💾 Token transfer stored with ID: ${transferResult[0].id}`);
       
       // Trigger payment to group members
       const paymentResult = await ContractUtils.triggerGroupPayment(db, deployedGroupData.group_id, to, token_address, amount);
@@ -597,20 +337,15 @@ async function handleTokenTransfer(db: any, eventData: any, eventRecord: any, bl
         .update(tokenTransfers)
         .set({ 
           is_processed: true,
-          payment_tx_hash: paymentResult.transactionHash || eventRecord.transaction_hash,
+          payment_tx_hash: paymentResult.transactionHash || "unknown",
         })
-        .where(eq(tokenTransfers.transaction_hash, eventRecord.transaction_hash));
+        .where(eq(tokenTransfers.id, transferResult[0].id));
       
-      console.log(`Payment triggered for group ${deployedGroupData.group_id}`);
+      console.log(`✅ Payment triggered for group ${deployedGroupData.group_id}`);
     }
     
-    // Store event
-    await db.insert(events).values(eventRecord);
-    
   } catch (error) {
-    console.error("Error in handleTokenTransfer:", error);
+    console.error("❌ Error in handleTokenTransfer:", error);
     throw error;
   }
 }
-
-
