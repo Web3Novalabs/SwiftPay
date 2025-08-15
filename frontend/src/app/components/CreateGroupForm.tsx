@@ -31,6 +31,9 @@ import { useCallback } from "react";
 
 export const SWIFTPAY_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
+  export const NEW_SWIFTPAY_CONTRACT_ADDRESS =
+    "0x058019ce428bbcb9447ea3bb70315100c1320ad12a484d8c49e0876a2a203106";
+  
 
 export const STRK_SEPOLIA =
   "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
@@ -243,6 +246,7 @@ export default function CreateGroupForm() {
             name: byteArray.byteArrayFromString(formData.name),
             members: formData.members,
             token_address: formData.tokenAddress,
+            usage_count:cairo.uint256(1),
           }),
         };
 

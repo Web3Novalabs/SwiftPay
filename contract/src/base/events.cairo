@@ -48,4 +48,13 @@ pub struct GroupPaid {
     pub paid_by: ContractAddress,
     pub paid_at: u64,
     pub members: Array<GroupMember>,
+    pub usage_count: u256,
 }
+
+#[derive(Serde, Drop, starknet::Event)]
+pub struct SubscriptionTopped {
+    #[key]
+    pub group_id: u256,
+    pub usage_count: u256,
+}
+

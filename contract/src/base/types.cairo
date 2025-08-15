@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 // GroupMember type
-#[derive(Serde, Drop, Copy, starknet::Store, PartialEq)]
+#[derive(Serde, Drop, Copy, starknet::Store, PartialEq, Debug)]
 pub struct GroupMember {
     pub addr: ContractAddress,
     pub percentage: u8,
@@ -11,7 +11,7 @@ pub struct GroupMember {
 pub struct Group {
     pub id: u256,
     pub name: ByteArray,
-    pub is_paid: bool,
+    pub usage_limit_reached: bool,
     pub creator: ContractAddress,
 }
 
@@ -22,7 +22,7 @@ pub struct GroupUpdateRequest {
     pub new_name: ByteArray,
     pub requester: ContractAddress,
     pub fee_paid: bool,
-    pub approval_count: u8,
-    // pub total_members: u8,
-    pub is_completed: bool,
+    // pub approval_count: u8,
+// pub total_members: u8,
+// pub is_completed: bool,
 }
