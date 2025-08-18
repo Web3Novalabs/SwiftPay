@@ -29,10 +29,10 @@ import QRCode from "react-qr-code";
 import { STRK_ABI } from "@/abi/strk_abi";
 import { useCallback } from "react";
 
-export const SWIFTPAY_CONTRACT_ADDRESS =
+export const OLD_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-  export const NEW_SWIFTPAY_CONTRACT_ADDRESS =
-    "0x058019ce428bbcb9447ea3bb70315100c1320ad12a484d8c49e0876a2a203106";
+  export const SWIFTPAY_CONTRACT_ADDRESS =
+    "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
   
 
 export const STRK_SEPOLIA =
