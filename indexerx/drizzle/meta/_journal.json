@@ -29,6 +29,20 @@
       "when": 1755239031767,
       "tag": "0003_condemned_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1755349625803,
+      "tag": "0004_deep_speed",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1755349658126,
+      "tag": "0005_thin_ronan",
+      "breakpoints": true
     }
   ]
 }

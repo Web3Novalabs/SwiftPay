@@ -1,49 +1,30 @@
 import { defineIndexer } from "apibara/indexer";
-import { useLogger } from "apibara/plugins";
 import { drizzle, drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
 import { StarknetStream, getSelector } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
 import { eq, and } from "drizzle-orm";
-
-// Import contract utilities
+import { useLogger } from "apibara/plugins";
+import { groups, deployedGroups, tokenTransfers, groupMembers } from "../lib/schema";
 import { ContractUtils } from "../lib/contract-utils";
-
-// Import all schema tables
-import {
-  groups,
-  groupMembers,
-  updateRequests,
-  updateRequestNewMembers,
-  updateApprovals,
-  pendingUpdates,
-  events,
-  groupPayments,
-  contractState,
-  cursorTable,
-  deployedGroups,
-  tokenTransfers,
-} from "../lib/schema";
 
 // Create drizzle instance
 const drizzleDb = drizzle({
   schema: {
     groups,
-    groupMembers,
-    updateRequests,
-    updateRequestNewMembers,
-    updateApprovals,
-    pendingUpdates,
-    events,
-    groupPayments,
-    contractState,
-    cursorTable,
     deployedGroups,
     tokenTransfers,
+    groupMembers,
   },
 });
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
   const { startingBlock, streamUrl, contractAddress } = runtimeConfig.myIndexer;
+
+  // Initialize Starknet connection for contract interactions
+  ContractUtils.initialize().catch(error => {
+    console.error("❌ Failed to initialize Starknet connection:", error);
+    console.log("⚠️ Contract interactions will not work without proper Starknet configuration");
+  });
 
   return defineIndexer(StarknetStream)({
     streamUrl,
@@ -65,7 +46,6 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     plugins: [
       drizzleStorage({
         db: drizzleDb,
-        idColumn: "id", // Use the actual "id" column name from our schema
       }),
     ],
     async transform({ block, endCursor }) {
@@ -100,16 +80,12 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
           : 0;
         
         try {
-          await db.insert(cursorTable).values({
-            endCursor: cursorValue,
-            uniqueKey: "autoshare_indexer",
-          }).onConflictDoUpdate({
-            target: cursorTable.uniqueKey,
-            set: { endCursor: cursorValue },
-          });
+          // Store cursor for resuming from this point
+          // Note: Cursor handling is simplified for now
+          console.log(`�� Processed block ${header.blockNumber}, cursor: ${cursorValue}`);
         } catch (error) {
-          console.error("Error updating cursor:", error);
-          // If the table doesn't exist yet, just log the error and continue
+          console.error("Error handling cursor:", error);
+          // Continue processing even if cursor handling fails
         }
       }
     },
@@ -330,7 +306,14 @@ async function handleTokenTransfer(db: any, eventData: any, blockNumber: bigint,
       console.log(`💾 Token transfer stored with ID: ${transferResult[0].id}`);
       
       // Trigger payment to group members
-      const paymentResult = await ContractUtils.triggerGroupPayment(db, deployedGroupData.group_id, to, token_address, amount);
+      const paymentResult = await ContractUtils.triggerGroupPayment(
+        db,
+        deployedGroupData.group_id,
+        to,
+        token_address,
+        amount,
+        transaction_hash
+      );
       
       // Mark the transfer as processed
       await db
