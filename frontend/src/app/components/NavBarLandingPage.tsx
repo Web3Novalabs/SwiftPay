@@ -9,7 +9,7 @@ const NavItems = [
 
   {
     name: "Launch App",
-    link: "/launch-app",
+    link: "/dashboard",
   },
   {
     name: "Waitlist",
@@ -30,7 +30,7 @@ const NavBarLandingPage = () => {
                 key={i}
                 className="border-gradient !py-1.5 sm:!py-2 md:!py-2.5 !px-4 sm:!px-6 md:!px-7 cursor-pointer text-xs sm:text-sm md:text-base"
               >
-                {item.name}
+                <Link href={item.link}>{item.name}</Link>
               </li>
             );
           }
