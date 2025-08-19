@@ -31,11 +31,11 @@ import { useCallback } from "react";
 
 export const OLD_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-  export const SEMI_OLD_SWIFTPAY_CONTRACT_ADDRESS =
+  export const SWIFTPAY_CONTRACT_ADDRESS =
     "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
   
-    export const SWIFTPAY_CONTRACT_ADDRESS =
-      "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
+    // export const SWIFTPAY_CONTRACT_ADDRESS =
+    //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
   
 
 export const STRK_SEPOLIA =
@@ -71,11 +71,11 @@ export default function CreateGroupForm() {
     members: [
       {
         addr: "0x05a99911249cD55eF49B196E0f380AC086C6f3b2459adb8E9A33Ae8610e1C7Ed",
-        percentage: 40,
+        percentage: 20,
       },
       {
         addr: "0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a",
-        percentage: 60,
+        percentage: 80,
       },
     ],
   });
