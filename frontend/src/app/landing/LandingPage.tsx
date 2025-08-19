@@ -9,6 +9,8 @@ import flow1 from "../../../public/Group (1).svg";
 import flow2 from "../../../public/Group (2).svg";
 import flow3 from "../../../public/Group 3.svg";
 import paymesh_landing_bg from "../../../public/bg_Landing.png";
+import Link from "next/link";
+import NavBarLandingPage from "../components/NavBarLandingPage";
 
 const PaymeshFlow = [
   {
@@ -28,25 +30,7 @@ const PaymeshFlow = [
   },
 ];
 
-const NavItems = [
-  {
-    name: "Home",
-    link: "/",
-  },
-
-  {
-    name: "Launch App",
-    link: "/launch-app",
-  },
-  {
-    name: "Waitlist",
-    link: "/waitlist",
-  },
-];
-
 const LandingPage = () => {
-  const [active, setActive] = useState("Home");
-
   return (
     <div className="relative min-h-screen">
       <div
@@ -93,7 +77,7 @@ const LandingPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[95%] sm:w-[90%] md:w-[80%] mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-20 pb-20 px-6 md:pb-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[95%] sm:w-[90%] md:w-[80%] mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-20 pb-20 md:pb-4 px-6 md:px-0">
         {PaymeshFlow.map((flow, i) => (
           <div
             key={i}
@@ -114,44 +98,7 @@ const LandingPage = () => {
         ))}
       </div>
 
-      {/* <div className="flex absolute bottom-0 left-0 w-full bg-[#0A1223] items-center justify-center gap-5 mt-20">
-        <ul className="flex items-center gap-5 p-3">
-          <li className="cursor-pointer text-white">Home</li>
-          <li className="border-gradient !py-2.5 !px-7 cursor-pointer">
-            Launch App
-          </li>
-          <li className="cursor-pointer text-white">Waitlist</li>
-        </ul>
-      </div> */}
-
-      <div className="flex fixed bottom-0 left-0 w-full bg-[#0A1223] items-center justify-center gap-2 sm:gap-3 md:gap-5 mt-20">
-        <ul className="flex items-center gap-2 sm:gap-3 md:gap-5 p-2 sm:p-3">
-          {NavItems.map((item, i) => {
-            if (item.name === "Launch App") {
-              return (
-                <li
-                  key={i}
-                  className="border-gradient !py-1.5 sm:!py-2 md:!py-2.5 !px-4 sm:!px-6 md:!px-7 cursor-pointer text-xs sm:text-sm md:text-base"
-                >
-                  {item.name}
-                </li>
-              );
-            }
-
-            return (
-              <li
-                key={i}
-                className={`cursor-pointer text-white !py-1 !px-2 sm:!px-3 md:!px-4 transition-all text-xs sm:text-sm md:text-base ${
-                  active === item.name ? "border-b-2 border-[#E2E2E2]" : ""
-                }`}
-                onClick={() => setActive(item.name)}
-              >
-                {item.name}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <NavBarLandingPage />
     </div>
   );
 };
