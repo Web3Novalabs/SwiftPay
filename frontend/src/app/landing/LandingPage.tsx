@@ -45,12 +45,12 @@ const LandingPage = () => {
       </div>
 
       <div className="flex items-center justify-center flex-col mx-auto mt-12 sm:mt-16 md:mt-24 text-center px-4 sm:px-6 md:px-0">
-        <div className="bg-[#FFFFFF0D] w-fit mx-auto py-2.5 px-5 rounded-3xl text-sm">
+        <div className="bg-[#FFFFFF0D] text-white w-fit mx-auto py-2.5 px-5 rounded-3xl text-sm">
           <p>Trustworthy group funding on StarkNet</p>
         </div>
 
         <div className="">
-          <h1 className="bg-gradient-to-r from-[#DFDFE0] to-[#282B31] bg-clip-text py-6 text-transparent font-semibold text-[24px] sm:text-[30px] md:text-[50px]">
+          <h1 className="bg-gradient-to-r from-[#DFDFE0] to-[#282B31] bg-clip-text pt-6 pb-0 text-transparent font-semibold text-[24px] sm:text-[30px] md:text-[50px]">
             Transparent group funding on Starknet
           </h1>
 
@@ -77,7 +77,7 @@ const LandingPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[95%] sm:w-[90%] md:w-[80%] mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-20 pb-20 md:pb-4 px-6 md:px-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[95%] sm:w-[90%] mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-20 pb-20 md:pb-16 px-6 md:px-0">
         {PaymeshFlow.map((flow, i) => (
           <div
             key={i}
