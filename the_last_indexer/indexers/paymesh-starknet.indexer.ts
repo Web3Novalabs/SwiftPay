@@ -15,7 +15,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
     streamUrl,
     finality: "accepted",
-    startingBlock: BigInt(1624892),
+    startingBlock: BigInt(1625628),
     filter: {
       events: [
         {
@@ -51,8 +51,8 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
           const [, to, , ] = event.data;
           if (group_addresses.includes(to)) {
               logger.info(`Current group_addresses array when transferring: ${JSON.stringify(group_addresses)}`);
-              console.log("🎯 transaction found (to is in our contract addresses)");
-              console.log("Event Data: \n", event.data);
+              pay({address: String(to)})
+
           }
         }
       }
@@ -60,3 +60,23 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     },
   });
 }
+
+export const pay = async ({
+  address
+}: {
+  address: string;
+}) => {
+  console.log("pay function called");
+  fetch("http://localhost:8080/pay_member", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(
+      address
+    ),
+  }).then((success) => {
+    console.log("Payment made to ", address);
+    console.log("success: ", success);
+  }).catch((err) => {
+    console.log("An error occured ", err)
+  });
+};
