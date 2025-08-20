@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@apibara/protocol": "next",
-    "apibara": "next"
+    "apibara": "next",
+    "@apibara/starknet": "next"
   },
   "devDependencies": {
     "@types/node": "^20.5.2",
