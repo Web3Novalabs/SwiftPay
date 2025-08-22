@@ -8,6 +8,6 @@ services:
       CONTRACT_ADDRESS: "${CONTRACT_ADDRESS}"
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./server/Dockerfile
     ports:
       - "8080:8080"
