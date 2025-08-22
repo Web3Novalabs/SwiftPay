@@ -18,15 +18,15 @@ export default function WalletConnect() {
 
   const getNetworkColor = (chainId?: string) => {
     if (!chainId) return "text-gray-500";
-    if (chainId === sepolia.id) return "text-orange-600";
-    if (chainId === mainnet.id) return "text-green-600";
+    if (String(chainId) === String(sepolia.id)) return "text-orange-600";
+    if (String(chainId) === String(mainnet.id)) return "text-green-600";
     return "text-gray-500";
   };
 
   const getNetworkName = (chainId?: string) => {
     if (!chainId) return "Not Connected";
-    if (chainId === sepolia.id) return "Sepolia Testnet";
-    if (chainId === mainnet.id) return "Mainnet";
+    if (String(chainId) === String(sepolia.id)) return "Sepolia Testnet";
+    if (String(chainId) === String(mainnet.id)) return "Mainnet";
     return "Unknown Network";
   };
 
@@ -48,8 +48,8 @@ export default function WalletConnect() {
                 : "bg-gray-400"
             }`}
           ></div>
-          <span className={`text-sm font-medium ${getNetworkColor(chain?.id)}`}>
-            {getNetworkName(chain?.id)}
+          <span className={`text-sm font-medium ${getNetworkColor(String(chain?.id))}`}>
+            {getNetworkName(String(chain?.id))}
           </span>
         </div>
 

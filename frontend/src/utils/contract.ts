@@ -109,6 +109,7 @@ export const createGroup = async (
 export const getGroup = async (
   account: Account,
   groupId: string
+  
 ): Promise<any> => {
   try {
     const contract = createContractInstance(account);
