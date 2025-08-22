@@ -110,7 +110,7 @@ export const getGroup = async (
   account: Account,
   groupId: string
   
-): Promise<any> => {
+): Promise<object> => {
   try {
     const contract = createContractInstance(account);
     const formattedGroupId = formatU256(groupId);
