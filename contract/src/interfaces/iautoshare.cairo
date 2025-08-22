@@ -57,5 +57,5 @@ pub trait IAutoShare<TContractState> {
     // fn execute_group_update(ref self: TContractState, group_id: u256);
     fn withdraw(ref self: TContractState);
     // fn get_group_update_requests(self: @TContractState) -> Array<GroupUpdateRequest>;
-// fn get_group_update_request(self: @TContractState, group_id: u256) -> GroupUpdateRequest;
-}
+    // fn get_group_update_request(self: @TContractState, group_id: u256) -> GroupUpdateRequest;
+ }

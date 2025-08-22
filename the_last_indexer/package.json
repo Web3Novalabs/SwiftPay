@@ -1,0 +1,22 @@
+{
+  "name": "apibara-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "apibara prepare",
+    "dev": "apibara dev",
+    "start": "apibara start",
+    "build": "apibara build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@apibara/protocol": "next",
+    "apibara": "next",
+    "@apibara/starknet": "next"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.2",
+    "typescript": "^5.6.2"
+  }
+}
