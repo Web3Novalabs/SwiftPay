@@ -5,11 +5,6 @@ use axum::{
         header::{AUTHORIZATION, CONTENT_TYPE},
     },
     routing::{get, post},
-    http::{
-        HeaderName, HeaderValue, Method, StatusCode,
-        header::{AUTHORIZATION, CONTENT_TYPE},
-    },
-    routing::{get, post},
 };
 
 mod http;
