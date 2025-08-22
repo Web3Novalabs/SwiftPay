@@ -49,7 +49,7 @@ jobs:
     - name: Build and push Docker images
       uses: docker/bake-action@v2.3.0
       with:
-        context: ./server
+        files: ./server/docker-bake.hcl
         push: true
         set: |
           *.cache-from=type=gha
@@ -83,7 +83,6 @@ jobs:
         password: ${{ secrets.DROPLET_PASSWORD }}
         script: |
           cd ~
-          export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           docker-compose down
           docker-compose pull
           docker-compose up -d
