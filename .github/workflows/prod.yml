@@ -74,7 +74,23 @@ jobs:
 
     - name: Copy docker-compose.yml to droplet
       run: sshpass -v -p ${{ secrets.DROPLET_PASSWORD }} scp -o StrictHostKeyChecking=no server/docker-compose.yml root@${{ vars.DROPLET_IP }}:~
-
+      
+    - name: Deploy with environment variables
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ vars.DROPLET_IP }}
+        username: root
+        password: ${{ secrets.DROPLET_PASSWORD }}
+        script: |
+          cd ~
+          export RPC_URL="${{ secrets.RPC_URL }}"
+          export PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}"
+          export PUBLIC_KEY="${{ secrets.PUBLIC_KEY }}"
+          export CONTRACT_ADDRESS="${{ secrets.CONTRACT_ADDRESS }}"
+          docker-compose down
+          docker-compose pull
+          docker-compose up -d
+          
     - name: Deploy
       uses: appleboy/ssh-action@master
       with:
