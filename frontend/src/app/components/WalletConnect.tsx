@@ -76,7 +76,7 @@ export default function WalletConnect() {
       <button
         onClick={() => setShowConnectors(!showConnectors)}
         disabled={isPending}
-        className="px-4 py-2 text-white border-gradient cursor-pointer transition-colors text-sm font-medium disabled:opacity-50"
+        className="md:px-4 md:py-2 px-2 py-1.5 text-white border-gradient cursor-pointer transition-colors text-xs md:text-sm font-medium disabled:opacity-50"
       >
         {isPending ? "Connecting..." : "Connect Wallet"}
       </button>

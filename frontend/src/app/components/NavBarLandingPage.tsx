@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const NavItems = [
   {
     name: "Home",
-    link: "/",
+    link: "/landing",
   },
 
   {
@@ -18,7 +19,16 @@ const NavItems = [
 ];
 
 const NavBarLandingPage = () => {
+  const pathname = usePathname();
   const [active, setActive] = useState("Home");
+
+  // Update active state based on current route
+  useEffect(() => {
+    const currentItem = NavItems.find((item) => item.link === pathname);
+    if (currentItem) {
+      setActive(currentItem.name);
+    }
+  }, [pathname]);
 
   return (
     <div className="flex fixed bottom-0 left-0 w-full bg-[#0A1223] items-center justify-center gap-2 sm:gap-3 md:gap-5 mt-20">
@@ -38,8 +48,10 @@ const NavBarLandingPage = () => {
           return (
             <li
               key={i}
-              className={`cursor-pointer text-white !py-1 !px-2 sm:!px-3 md:!px-4 transition-all text-xs sm:text-sm md:text-base ${
-                active === item.name ? "border-b-2 border-[#E2E2E2]" : ""
+              className={`cursor-pointer !py-1 !px-2 transition-all text-xs sm:text-sm md:text-base ${
+                active === item.name
+                  ? "border-b-2 border-[#E2E2E2] text-white"
+                  : "text-[#8398AD]"
               }`}
               onClick={() => setActive(item.name)}
             >

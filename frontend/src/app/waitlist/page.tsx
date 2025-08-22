@@ -30,10 +30,10 @@ const LandingPage = () => {
         </h1>
 
         <div className="flex items-center justify-center gap-4">
-          <div className="border-gradient-links !p-2.5 rounded-full">
+          <div className="border-gradient-links !p-2.5 rounded-sm">
             <Image src={XLogo} alt="waitlist" className="cursor-pointer" />
           </div>
-          <div className="border-gradient-links !p-2.5 rounded-full">
+          <div className="border-gradient-links !p-2.5 rounded-sm">
             <Image src={githubLogo} alt="waitlist" className="cursor-pointer" />
           </div>
         </div>
@@ -46,7 +46,7 @@ const LandingPage = () => {
           />
         </div>
 
-        <div className="flex items-center justify-center bg-[#FFFFFF0D] gap-2 sm:gap-3 md:gap-4 mt-16 sm:mt-20 md:mt-32 rounded-full p-2 w-[90%] sm:w-[70%] md:w-[50%] lg:w-[35%] md:mb-28 mb-12">
+        <div className="flex items-center justify-center bg-[#FFFFFF0D] gap-2 sm:gap-3 md:gap-4 mt-16 sm:mt-20 md:mt-32 rounded-sm p-2 w-[90%] sm:w-[70%] md:w-[50%] lg:w-[35%] md:mb-28 mb-12">
           <Input
             type="email"
             placeholder="Enter your email"

@@ -45,7 +45,7 @@ const LandingPage = () => {
       </div>
 
       <div className="flex items-center justify-center flex-col mx-auto mt-12 sm:mt-16 md:mt-24 text-center px-4 sm:px-6 md:px-0">
-        <div className="bg-[#FFFFFF0D] text-white w-fit mx-auto py-2.5 px-5 rounded-3xl text-sm">
+        <div className="bg-[#FFFFFF0D] text-white w-fit mx-auto py-2.5 px-5 rounded-sm text-sm">
           <p>Trustworthy group funding on StarkNet</p>
         </div>
 
@@ -65,7 +65,7 @@ const LandingPage = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-8 sm:mt-10">
-          <div className="border-gradient hover:scale-102 transition-all cursor-pointer">
+          <div className="border-gradient !rounded-sm hover:scale-102 transition-all cursor-pointer">
             <Image src={bravos} alt="bravos" width={28} height={28} />
             <p>Connect Braavos</p>
           </div>
@@ -90,8 +90,8 @@ const LandingPage = () => {
               height={100}
               className="mb-4 sm:mb-7 w-16 h-16 sm:w-20 sm:h-20 md:w-[100px] md:h-[100px]"
             />
-            <h3 className="text-sm sm:text-base">{flow.title}</h3>
-            <p className="text-center text-[#8398AD] -mt-2 text-xs sm:text-sm font-medium">
+            <h3 className="text-sm sm:text-base text-white">{flow.title}</h3>
+            <p className="text-center text-[#8398AD] mt-0 text-xs sm:text-sm font-medium">
               {flow.description}
             </p>
           </div>

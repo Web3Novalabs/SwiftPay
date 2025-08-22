@@ -5,6 +5,7 @@ import Image from "next/image";
 import group1icon from "../../../public/PlusCircle.svg";
 import group2icon from "../../../public/tranx.svg";
 import group3icon from "../../../public/UsersFour.svg";
+import group4icon from "../../../public/Handshake.svg";
 import Link from "next/link";
 
 const MainGroupLinksData = [
@@ -20,7 +21,12 @@ const MainGroupLinksData = [
     description: "Create a new group to pool funds",
     link: "/dashboard/my-groups",
   },
-
+  {
+    name: "Crowd Funding",
+    icon: <Image src={group4icon} alt="icon" />,
+    description: "Receive funds from multiple wallets",
+    link: "/dashboard/crowd-fund",
+  },
   {
     name: "Transactions",
     icon: <Image src={group2icon} alt="icon" />,
@@ -43,7 +49,7 @@ const MainGroupLinks = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-10 pb-20 md:pb-16 px-6 md:px-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-10 pb-20 md:pb-16 px-0">
         {MainGroupLinksData.map((link, index) => (
           <Link
             href={link.link}
