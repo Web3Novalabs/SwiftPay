@@ -1,12 +1,12 @@
 target "default" {
-  dockerfile = "Dockerfile"
+  dockerfile = "server/Dockerfile"
   context = "./server"
   tags = ["akshola00/server:latest"]
   platforms = ["linux/amd64"]
 }
 
 target "api" {
-  dockerfile = "Dockerfile"
+  dockerfile = "server/Dockerfile"
   context = "./server"
   tags = ["akshola00/server:latest"]
   platforms = ["linux/amd64"]
