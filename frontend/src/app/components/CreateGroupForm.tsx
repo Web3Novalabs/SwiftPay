@@ -147,27 +147,28 @@ export default function CreateGroupForm() {
     }
   };
 
-  useEffect(() => {
-    console.log(data, error);
-    let m;
-    if (!data) return;
-    if (
-      data.value &&
-      typeof data.value === "object" &&
-      "events" in data.value &&
-      Array.isArray((data.value as any).events)
-    ) {
-      m = (data.value as any).events[3]?.data[0];
-      m = m.replace("0x", "0x0");
-      setGroupAddress(m);
-      setIsSuccess(true);
-      // Fetch balance when group address is set
-      fetchGroupBalance(m);
-    } else {
-      m = undefined;
-    }
-    console.log(m);
-  }, [data, error]);
+  // useEffect(() => {
+  //   console.log(data, error);
+  //   let m;
+  //   if (!data) return;
+  //   if (
+  //     data.value &&
+  //     typeof data.value === "object" &&
+  //     "events" in data.value &&
+  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  //     Array.isArray((data.value as any).events)
+  //   ) {
+  //     m = (data.value as any).events[3]?.data[0];
+  //     m = m.replace("0x", "0x0");
+  //     setGroupAddress(m);
+  //     setIsSuccess(true);
+  //     // Fetch balance when group address is set
+  //     fetchGroupBalance(m);
+  //   } else {
+  //     m = undefined;
+  //   }
+  //   console.log(m);
+  // }, [data, error]);
 
   const totalPercentage = formData.members.reduce(
     (sum, member) => sum + member.percentage,

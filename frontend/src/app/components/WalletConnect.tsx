@@ -18,15 +18,15 @@ export default function WalletConnect() {
 
   const getNetworkColor = (chainId?: string) => {
     if (!chainId) return "text-gray-500";
-    if (chainId === sepolia.id) return "text-orange-600";
-    if (chainId === mainnet.id) return "text-green-600";
+    if (String(chainId) === String(sepolia.id)) return "text-orange-600";
+    if (String(chainId) === String(mainnet.id)) return "text-green-600";
     return "text-gray-500";
   };
 
   const getNetworkName = (chainId?: string) => {
     if (!chainId) return "Not Connected";
-    if (chainId === sepolia.id) return "Sepolia Testnet";
-    if (chainId === mainnet.id) return "Mainnet";
+    if (String(chainId) === String(sepolia.id)) return "Sepolia Testnet";
+    if (String(chainId) === String(mainnet.id)) return "Mainnet";
     return "Unknown Network";
   };
 
@@ -48,14 +48,14 @@ export default function WalletConnect() {
                 : "bg-gray-400"
             }`}
           ></div>
-          <span className={`text-sm font-medium ${getNetworkColor(chain?.id)}`}>
-            {getNetworkName(chain?.id)}
+          <span className={`text-sm font-medium ${getNetworkColor(String(chain?.id))}`}>
+            {getNetworkName(String(chain?.id))}
           </span>
         </div>
 
         {/* Address Display */}
-        <div className="bg-gray-100 px-3 py-2 rounded-lg">
-          <span className="text-sm font-mono text-gray-700">
+        <div className=" bg-gradient-to-r from-[#434672] to-[#755A5A] px-3 py-2 rounded-lg">
+          <span className="text-sm font-mono text-white">
             {formatAddress(address || "")}
           </span>
         </div>
@@ -63,7 +63,7 @@ export default function WalletConnect() {
         {/* Disconnect Button */}
         <button
           onClick={() => disconnect()}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+          className="px-4 py-2 text-white border-gradient cursor-pointer transition-colors text-sm font-medium"
         >
           Disconnect
         </button>
@@ -76,7 +76,7 @@ export default function WalletConnect() {
       <button
         onClick={() => setShowConnectors(!showConnectors)}
         disabled={isPending}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
+        className="md:px-4 md:py-2 px-2 py-1.5 text-white border-gradient cursor-pointer transition-colors text-xs md:text-sm font-medium disabled:opacity-50"
       >
         {isPending ? "Connecting..." : "Connect Wallet"}
       </button>
