@@ -1,0 +1,19 @@
+version: '3'
+services:
+  api:
+    environment:
+      RPC_URL: "${RPC_URL}"
+      PRIVATE_KEY: "${PRIVATE_KEY}"
+      PUBLIC_KEY: "${PUBLIC_KEY}"
+      CONTRACT_ADDRESS: "${CONTRACT_ADDRESS}"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
