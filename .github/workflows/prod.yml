@@ -49,6 +49,7 @@ jobs:
     - name: Build and push Docker images
       uses: docker/bake-action@v2.3.0
       with:
+        files: ./server/docker-bake.hcl
         push: true
         set: |
           *.cache-from=type=gha
