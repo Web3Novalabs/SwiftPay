@@ -1735,6 +1735,7 @@ dependencies = [
  "serde",
  "starknet",
  "tokio",
+ "tower-http",
 ]
 
 [[package]]
@@ -2241,6 +2242,7 @@ dependencies = [
  "tower",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]

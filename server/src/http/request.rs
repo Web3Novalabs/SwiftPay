@@ -7,19 +7,27 @@ use axum::{
 pub struct Response {
     pub message: String,
 }
-use serde::Serialize;
-use starknet::{accounts::Account, core::{types::{Call, Felt}, utils::get_selector_from_name}, macros::selector};
 use crate::util::connector::{contract_address_felt, is_valid_address, signer_account};
+use serde::Serialize;
+use starknet::{
+    accounts::Account,
+    core::{
+        types::{Call, Felt},
+        utils::get_selector_from_name,
+    },
+    macros::selector,
+};
 
 pub async fn new() -> (StatusCode, Json<&'static str>) {
     (StatusCode::OK, Json("PAYMESH IS ACTIVE"))
-}   
+}
 
 pub async fn pay(
-Json(address): Json<String>,) ->Result<(StatusCode, Json<String>), (StatusCode, Json<Response>)>{
-    let  account = signer_account();
+    Json(address): Json<String>,
+) -> Result<(StatusCode, Json<String>), (StatusCode, Json<Response>)> {
+    let account = signer_account();
     let contract_address = contract_address_felt();
-    println!("this address is: {}",contract_address);
+    println!("this address is: {}", contract_address);
 
     if !is_valid_address(address.as_str()) {
         let err = format!("INVALID ADDRESS");
@@ -37,19 +45,16 @@ Json(address): Json<String>,) ->Result<(StatusCode, Json<String>), (StatusCode, 
         calldata: vec![address],
     };
 
-    let execute = account
-        .execute_v3(vec![pay_call])
-        .send()
-        .await;
+    let execute = account.execute_v3(vec![pay_call]).send().await;
 
     match execute {
         Ok(data) => {
-            println!("DATA:  {:?}",data.transaction_hash);
+            println!("DATA:  {:?}", data.transaction_hash);
             let msg = format!("AMOUNT SPLIT SUCCESFULLY {}", data.transaction_hash);
             Ok((StatusCode::OK, Json(msg)))
-        }Err(data) => {
-
-            println!("ERROR:  {}",data);
+        }
+        Err(data) => {
+            println!("ERROR:  {}", data);
             let err = format!("unable to make request");
             let message = Response {
                 message: err.clone(),
@@ -57,5 +62,4 @@ Json(address): Json<String>,) ->Result<(StatusCode, Json<String>), (StatusCode, 
             return Err((StatusCode::BAD_GATEWAY, Json(message)));
         }
     }
-   
 }
