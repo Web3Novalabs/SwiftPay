@@ -2,11 +2,15 @@ use std::{env::var, sync::LazyLock};
 
 use starknet::{
     accounts::{Account, ExecutionEncoding, SingleOwnerAccount},
-    core::{chain_id, types::{BlockId, BlockTag, Call, Felt, FunctionCall}, utils::get_selector_from_name},
+    core::{
+        chain_id,
+        types::{BlockId, BlockTag, Call, Felt, FunctionCall},
+        utils::get_selector_from_name,
+    },
     macros::selector,
     providers::{
-        jsonrpc::{HttpTransport, JsonRpcClient},
         Provider, Url,
+        jsonrpc::{HttpTransport, JsonRpcClient},
     },
     signers::{LocalWallet, SigningKey},
 };
@@ -32,7 +36,6 @@ fn rpc_provider() -> JsonRpcClient<HttpTransport> {
 pub fn contract_address_felt() -> Felt {
     Felt::from_hex(&CONTRACT_ADDRESS).unwrap()
 }
-
 
 pub fn signer_account() -> SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet> {
     let provider = rpc_provider();
