@@ -15,7 +15,7 @@ export default function Home() {
   }
   
   function post() {
-    fetch("http://localhost:8080/pay_member", {
+    fetch("http://68.183.139.104:8080/pay_member", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(

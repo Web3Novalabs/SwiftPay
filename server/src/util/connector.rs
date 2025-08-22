@@ -1,15 +1,10 @@
 use std::{env::var, sync::LazyLock};
 
 use starknet::{
-    accounts::{Account, ExecutionEncoding, SingleOwnerAccount},
-    core::{
-        chain_id,
-        types::{BlockId, BlockTag, Call, Felt, FunctionCall},
-        utils::get_selector_from_name,
-    },
-    macros::selector,
+    accounts::{ExecutionEncoding, SingleOwnerAccount},
+    core::{chain_id, types::Felt},
     providers::{
-        Provider, Url,
+        Url,
         jsonrpc::{HttpTransport, JsonRpcClient},
     },
     signers::{LocalWallet, SigningKey},

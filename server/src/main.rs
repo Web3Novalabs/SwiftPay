@@ -12,7 +12,7 @@ mod util;
 use http::request::new;
 
 use crate::http::request::pay;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
