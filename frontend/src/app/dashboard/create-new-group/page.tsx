@@ -85,7 +85,7 @@ const CreateNewGroup = () => {
   const [groupBalance, setGroupBalance] = useState<string>("0");
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isCheckboxChecked, setIsCheckboxChecked] = useState(false);
-
+  const [creationFee, setCreationFee] = useState<null | number>(null)
   const strkTokenAddress =
     "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
@@ -122,8 +122,13 @@ const CreateNewGroup = () => {
   }, [data, error, hasProcessedTransaction]);
 
   const { readData: usageFee } = useContractFetch(PAYMESH_ABI, "get_group_usage_fee", []) 
-  
-  console.log(usageFee)
+ const ONE_STK = 1000000000000000000;
+  useEffect(() => {
+    if (usageFee) {
+      const fee = BigInt(usageFee);
+      setCreationFee(Number(fee) / ONE_STK);
+    }
+},[usageFee])
   // Reset success state when component unmounts or when navigating away
   useEffect(() => {
     return () => {
@@ -640,7 +645,7 @@ const CreateNewGroup = () => {
                 Cost per use:
               </h3>
               <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
-                STK 1.00
+                STK {creationFee ? creationFee.toFixed(2) : ""}
               </p>
             </div>
 
@@ -656,7 +661,7 @@ const CreateNewGroup = () => {
                 Total cost:
               </h3>
               <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
-                STK 2.00
+                STK {creationFee ? Number(creationFee* Number(formData.usage)).toFixed(2) : ""}
               </p>
             </div>
           </div>

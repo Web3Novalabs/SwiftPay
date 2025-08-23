@@ -9,3 +9,4 @@ export const USDC_SEPOLIA =
   "0x53b40a647cedfca6ca84f542a0fe36736031905a9639a7f19a3c1e66bfd5080";
 export const ETH_SEPOLIA =
   "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
+  // get_all_groups;
