@@ -90,9 +90,9 @@ jobs:
           CONTRACT_ADDRESS=${{ secrets.CONTRACT_ADDRESS }}
           EOL
 
-          docker-compose --env-file .env down
-          docker-compose --env-file .env pull
-          docker-compose --env-file .env up -d
+          docker compose --env-file .env down
+          docker compose --env-file .env pull
+          docker compose --env-file .env up -d
 
     - name: Deploy
       uses: appleboy/ssh-action@master
@@ -102,6 +102,6 @@ jobs:
         password: ${{ secrets.DROPLET_PASSWORD }}
         script: |
           cd ~
-          docker-compose down
-          docker-compose pull
-          docker-compose up -d
+          docker compose down
+          docker compose pull
+          docker compose up -d

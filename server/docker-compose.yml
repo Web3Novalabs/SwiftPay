@@ -10,3 +10,4 @@ services:
     ports:
       - "8080:8080"
     # Remove the build section since we're using pre-built image
+
