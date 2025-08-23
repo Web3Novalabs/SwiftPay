@@ -7,7 +7,7 @@ import {
   LucideUsers,
   Loader2,
 } from "lucide-react";
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Sofia_Sans } from "next/font/google";
 import { useAccount } from "@starknet-react/core";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
+import { useContractFetch } from "@/hooks/useContractInteraction";
+import { useTransactionReceipt } from "@starknet-react/core";
 // import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
 
 const sofiaSans = Sofia_Sans({
@@ -79,6 +82,34 @@ const MyGroupsPage = () => {
   const router = useRouter();
 
   const { account, address } = useAccount();
+
+  const [transaction, setTransaction] = useState();
+
+  /// list of group an address has shares in
+  const { readData: groupList } = useContractFetch(
+    PAYMESH_ABI,
+    "group_address_has_shares_in",
+    ["0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a"]
+  );
+  console.log(groupList);
+
+  // useEffect(() => {
+  //   if (!groupList) return;
+  //   let groupData = [];
+  //   groupList.map((data) => {
+  //     groupData.push({
+  //       creator: `0x0${data.creator.toString(16)}`,
+  //       date: data.date ? epocTime(data.date.toString(16)) : "",
+  //       name: data.name,
+  //       id: `0x0${data.id.toString(16)}`,
+  //       usage_limit_reached: data.usage_limit_reached,
+  //       groupAddress: `0x0${data["group_address"].toString(16)}`,
+  //     });
+  //   });
+  //   setTransaction(groupData);
+  // }, [transaction]);
+
+  // console.log(transaction);
 
   // const {
   //   readData: groupSharesData,

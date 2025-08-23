@@ -23,7 +23,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     filter: {
       events: [
         {
-          address: config.contractAddress as `0x${string}`,
+          address: "0x03eb5cc3d473d59331c48096cafa360d52b49fcd6a08b14a6811223c773a2d73",
           keys: [GROUP_CREATED_SELECTOR],
         },
         {

@@ -24,7 +24,7 @@ import {
   FeeMode,
   PaymasterDetails,
 } from "starknet";
-import { myProvider } from "@/utils/contract";
+import { myProvider, PAYMESH_ADDRESS } from "@/utils/contract";
 import React from "react";
 import group1icon from "../../../../public/PlusCircle.svg";
 import Image from "next/image";
@@ -224,7 +224,7 @@ const CreateNewGroup = () => {
 
       if (account != undefined) {
         const swiftpayCall = {
-          contractAddress: SWIFTPAY_CONTRACT_ADDRESS,
+          contractAddress: PAYMESH_ADDRESS,
           entrypoint: "create_group",
           calldata: CallData.compile({
             name: byteArray.byteArrayFromString(formData.name),

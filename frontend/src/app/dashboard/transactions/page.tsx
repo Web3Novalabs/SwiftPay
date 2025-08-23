@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { useContractFetch } from "@/hooks/useContractInteraction";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
+import { epocTime } from "@/utils/contract";
 
 // Sample transaction data
 const transactionData = [
@@ -167,12 +168,14 @@ const TransactionsPage = () => {
     if (filter === "pending") return transaction.status === "In progress";
     return true;
   });
-  const { readData: groupList } = useContractFetch(
+
+  const { readData: paid } = useContractFetch(
     PAYMESH_ABI,
     "get_all_groups",
     []
   ); 
-  console.log(groupList)
+
+ 
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -219,15 +222,15 @@ const TransactionsPage = () => {
                   <th className="px-6 py-6   text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Group Address
                   </th>
-                  <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
+                  {/* <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Amount
-                  </th>
+                  </th> */}
                   <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
+                  {/* <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Status
-                  </th>
+                  </th> */}
                 </tr>
               </thead>
               <tbody className="bg-[#FFFFFF0D] divide-y divide-[#FFFFFF0D]">

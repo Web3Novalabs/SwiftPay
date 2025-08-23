@@ -86,6 +86,14 @@ export const PAYMESH_ABI: Abi = [
         name: "creator",
         type: "core::starknet::contract_address::ContractAddress",
       },
+      {
+        name: "group_address",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      {
+        name: "date",
+        type: "core::integer::u64",
+      },
     ],
   },
   {
