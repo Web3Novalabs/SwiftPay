@@ -3,7 +3,7 @@ import { Search, Users, Calendar, Plus, LucideUsers, Loader2 } from "lucide-reac
 import React, { useMemo, useEffect } from "react";
 import { Sofia_Sans } from "next/font/google";
 import { useAccount } from "@starknet-react/core";
-import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
+// import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
 
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
