@@ -25,19 +25,20 @@ pub async fn new() -> (StatusCode, Json<&'static str>) {
 pub async fn pay(
     Json(address): Json<String>,
 ) -> Result<(StatusCode, Json<String>), (StatusCode, Json<Response>)> {
-    let account = signer_account();
-    let contract_address = contract_address_felt();
-    println!("this address is: {}", contract_address);
+    // let account = signer_account();
+    // let contract_address = contract_address_felt();
+    // println!("this address is: {}", contract_address);
 
-    if !is_valid_address(address.as_str()) {
-        let err = format!("INVALID ADDRESS");
-        let message = Response {
-            message: err.clone(),
-        };
-        return Err((StatusCode::BAD_GATEWAY, Json(message)));
-    } else {
-        Ok((StatusCode::OK, Json("VALID ADDRESS".to_string())))
-    }
+    // if !is_valid_address(address.as_str()) {
+    //     let err = format!("INVALID ADDRESS");
+    //     let message = Response {
+    //         message: err.clone(),
+    //     };
+    //     return Err((StatusCode::BAD_GATEWAY, Json(message)));
+    // } else {
+    //     Ok((StatusCode::OK, Json("VALID ADDRESS".to_string())))
+    // }
+    Ok((StatusCode::OK, Json("VALID ADDRESS".to_string())))
     // let address = Felt::from_hex(address.as_str()).expect("TOKEN ADDRESS NOT PROVIDED");
 
     // let pay_call = Call {
