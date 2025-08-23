@@ -48,9 +48,9 @@ export default function QRcode({
 
         <div className="text-center p-4 sm:p-6">
           <div className="mb-4 sm:mb-5">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#35c066] rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
               <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-green-600"
+                className="w-6 h-6 sm:w-8 sm:h-8 text-green-800"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -70,7 +70,7 @@ export default function QRcode({
 
           {/* QR Code */}
           <div className="mb-4 sm:mb-6">
-            <div className="inline-block p-2 sm:p-4 bg-white border-2 border-gray-200 rounded-lg">
+            <div className="inline-block p-2 sm:p-3 bg-[#0a1223af] border-2 border-[#434672d8] rounded-lg">
               <QRCode
                 value={groupAddress}
                 size={160}

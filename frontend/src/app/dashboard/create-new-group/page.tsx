@@ -33,6 +33,7 @@ import group4icon from "../../../../public/UsersFour.svg";
 import QRcode from "../components/QRcode";
 import Loading from "../components/Loading";
 import { SWIFTPAY_CONTRACT_ADDRESS } from "@/constants/abi";
+import { Trash, Trash2 } from "lucide-react";
 
 interface GroupMember {
   addr: string;
@@ -477,7 +478,7 @@ const CreateNewGroup = () => {
         {formData.members.map((member, index) => (
           <div
             key={index}
-            className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
+            className="w-full flex flex-col sm:flex-row items-center mb-7 justify-center gap-4 sm:gap-6"
           >
             <div className="w-full sm:w-[75%]">
               <p className="text-[#E2E2E2] text-sm sm:text-base">
@@ -495,22 +496,30 @@ const CreateNewGroup = () => {
               <p className="text-[#E2E2E2] text-sm sm:text-base">
                 Enter Percentage
               </p>
-              <Input
-                type="text"
-                placeholder="Enter percentage"
-                value={member.percentage || ""}
-                onChange={(e) => {
-                  // Only allow numbers 0-100
-                  const value = e.target.value.replace(/[^0-9]/g, "");
-                  const numValue = parseInt(value) || 0;
-                  if (numValue <= 100) {
-                    updateMember(index, "percentage", numValue);
-                  }
-                }}
-                pattern="[0-9]*"
-                inputMode="numeric"
-                className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
-              />
+              <div className="flex items-center gap-2 ">
+                <div className="w-full">
+                  <Input
+                    type="text"
+                    placeholder="Enter percentage"
+                    value={member.percentage || ""}
+                    onChange={(e) => {
+                      // Only allow numbers 0-100
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      const numValue = parseInt(value) || 0;
+                      if (numValue <= 100) {
+                        updateMember(index, "percentage", numValue);
+                      }
+                    }}
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
+                  />
+                </div>
+
+                <div className="w-fit h-full mt-2 cursor-pointer bg-[#403E3E] border border-[#FFFFFF0D] rounded-sm p-3 hover:bg-[#755A5A] transition-all duration-300">
+                  <Trash2 className="w-6 h-6 text-[#E2E2E2]" />
+                </div>
+              </div>
             </div>
           </div>
         ))}
