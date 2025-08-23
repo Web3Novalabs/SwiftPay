@@ -220,7 +220,6 @@ const CreateNewGroup = () => {
           calldata: CallData.compile({
             name: byteArray.byteArrayFromString(formData.name),
             members: formData.members,
-            token_address: formData.tokenAddress,
             usage_count: cairo.uint256(1),
           }),
         };
