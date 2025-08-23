@@ -34,6 +34,8 @@ import QRcode from "../components/QRcode";
 import Loading from "../components/Loading";
 import { SWIFTPAY_CONTRACT_ADDRESS } from "@/constants/abi";
 import { Trash, Trash2 } from "lucide-react";
+import { useContractFetch } from "@/hooks/useContractInteraction";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 
 interface GroupMember {
   addr: string;
@@ -42,7 +44,7 @@ interface GroupMember {
 
 interface CreateGroupFormData {
   name: string;
-  amount: string;
+  usage: string | null;
   tokenAddress: string;
   members: GroupMember[];
 }
@@ -54,7 +56,7 @@ const CreateNewGroup = () => {
 
   const [formData, setFormData] = useState<CreateGroupFormData>({
     name: "",
-    amount: "0",
+    usage: null,
     tokenAddress:
       "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     members: [
@@ -119,6 +121,9 @@ const CreateNewGroup = () => {
     console.log(m);
   }, [data, error, hasProcessedTransaction]);
 
+  const { readData: usageFee } = useContractFetch(PAYMESH_ABI, "get_group_usage_fee", []) 
+  
+  console.log(usageFee)
   // Reset success state when component unmounts or when navigating away
   useEffect(() => {
     return () => {
@@ -129,6 +134,15 @@ const CreateNewGroup = () => {
       setResultHash("");
     };
   }, []);
+
+  const removeMember = (index: number) => {
+    if (formData.members.length <= 2) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.filter((_, i) => i !== index),
+    }));
+  };
 
   const fetchGroupBalance = async (groupAddr: string) => {
     if (!groupAddr) return;
@@ -254,7 +268,7 @@ const CreateNewGroup = () => {
       // Reset form
       setFormData({
         name: "",
-        amount: "",
+        usage: null,
         tokenAddress: "",
         members: [
           { addr: "", percentage: 0 },
@@ -344,7 +358,7 @@ const CreateNewGroup = () => {
     setResultHash("");
     setFormData({
       name: "",
-      amount: "",
+      usage: null,
       tokenAddress:
         "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
       members: [
@@ -399,7 +413,7 @@ const CreateNewGroup = () => {
         />
       </div>
 
-      <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 w-full">
+      {/* <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 w-full">
         <div className="w-full sm:w-1/2">
           <h2 className="text-[#E2E2E2] text-base sm:text-lg pb-3 sm:pb-5 font-semibold">
             Expected token
@@ -460,7 +474,7 @@ const CreateNewGroup = () => {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </div> */}
 
       <div className="mt-8 sm:mt-10">
         <div className="flex justify-between items-center mb-4">
@@ -471,7 +485,7 @@ const CreateNewGroup = () => {
             onClick={distributeEvenly}
             className=" py-2 px-4 w-fit border-gradient rounded-sm bg-[#FFFFFF0D] text-[#E2E2E2] flex items-center justify-center gap-2 hover:bg-opacity-10 transition-colors cursor-pointer"
           >
-            Distribute Evenly
+            Distribute
           </button>
         </div>
 
@@ -516,9 +530,15 @@ const CreateNewGroup = () => {
                   />
                 </div>
 
-                <div className="w-fit h-full mt-2 cursor-pointer bg-[#403E3E] border border-[#FFFFFF0D] rounded-sm p-3 hover:bg-[#755A5A] transition-all duration-300">
-                  <Trash2 className="w-6 h-6 text-[#E2E2E2]" />
-                </div>
+                {formData.members.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => removeMember(index)}
+                    className="w-fit h-full mt-2 cursor-pointer bg-[#403E3E] border border-[#FFFFFF0D] rounded-sm p-3 hover:bg-[#755A5A] transition-all duration-300"
+                  >
+                    <Trash2 className="w-6 h-6 text-[#E2E2E2]" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -604,7 +624,11 @@ const CreateNewGroup = () => {
           </p>
           <Input
             type="number"
-            placeholder="Enter number of uses"
+            value={formData?.usage ? formData.usage : ""}
+            placeholder="Enter number of usage"
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, usage: e.target.value }))
+            }
             className="mt-2 py-4 sm:py-6 px-3 sm:px-4 w-full rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
           />
 
@@ -617,7 +641,7 @@ const CreateNewGroup = () => {
                 Cost per use:
               </h3>
               <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
-                $1.00
+                STK 1.00
               </p>
             </div>
 
@@ -625,7 +649,7 @@ const CreateNewGroup = () => {
               <h3 className="text-[#8398AD] text-sm sm:text-base font-semibold">
                 Number of uses:
               </h3>
-              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">2</p>
+              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">{formData.usage}</p>
             </div>
 
             <div className="flex items-center pt-3 sm:pt-5 justify-between">
@@ -633,7 +657,7 @@ const CreateNewGroup = () => {
                 Total cost:
               </h3>
               <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
-                $2.00
+                STK 2.00
               </p>
             </div>
           </div>

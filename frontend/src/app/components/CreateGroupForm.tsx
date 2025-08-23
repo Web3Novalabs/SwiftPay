@@ -12,9 +12,9 @@ import {
   usePaymasterSendTransaction,
 } from "@starknet-react/core";
 import { sepolia } from "@starknet-react/chains";
-import { useContractInteraction } from "../../hooks/useContractInteraction";
+
 // import { SWIFTPAY_CONTRACT_ADDRESS, writeContractWithStarknetJs } from "@/hooks/useBlockchain";
-import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 import {
   byteArray,
   cairo,
@@ -61,7 +61,6 @@ export default function CreateGroupForm() {
   const { address, account } = useAccount();
   const { chain } = useNetwork();
 
-  const { createGroup, isCreatingGroup } = useContractInteraction();
 
   const [formData, setFormData] = useState<CreateGroupFormData>({
     name: "HACKHATHON FUND",
@@ -676,7 +675,7 @@ export default function CreateGroupForm() {
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end">
+            {/* <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={
@@ -699,7 +698,7 @@ export default function CreateGroupForm() {
                   "Create Group"
                 )}
               </button>
-            </div>
+            </div> */}
           </form>
         </>
       )}
