@@ -1,42 +1,27 @@
-# Use Node.js 18 slim image
-FROM node:18-alpine AS build
+FROM messense/rust-musl-cross:x86_64-musl as chef
+ENV SQLX_OFFFLINE=true
+RUN cargo install cargo-chef
 
-# Install pnpm
-RUN npm install -g pnpm
+WORKDIR /server
 
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
+FROM chef AS planner
 COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Build project
-RUN pnpm run build
+FROM chef AS builder
+COPY --from=planner /server/recipe.json recipe.json
+RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
 
+COPY . .
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
-# ---- Production ----
-FROM node:18-alpine
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /
 
-# Install pnpm
-RUN npm install -g pnpm
+COPY --from=builder /server/target/x86_64-unknown-linux-musl/release/server /server
 
-WORKDIR /app
+RUN chmod +x /server
 
-# Copy only necessary files
-COPY --from=build /app/package.json ./
-COPY --from=build /app/pnpm-lock.yaml ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/apibara.config.ts ./
-
-# Expose port if needed (optional)
+ENTRYPOINT ["/server"]
 EXPOSE 8080
-
-# Start indexer
-CMD ["pnpm", "start", "--indexer", "paymesh-starknet"]

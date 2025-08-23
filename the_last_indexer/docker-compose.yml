@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  paymesh-indexer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paymesh-starknet-indexer
+    restart: unless-stopped
+    environment:
+      DNA_TOKEN: ${DNA_TOKEN}
+      API: ${API}
+    mem_limit: 2g
