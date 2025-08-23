@@ -140,14 +140,14 @@ const CreateNewGroup = () => {
     };
   }, []);
 
-  const removeMember = (index: number) => {
-    if (formData.members.length <= 2) return;
+  // const removeMember = (index: number) => {
+  //   if (formData.members.length <= 2) return;
 
-    setFormData((prev) => ({
-      ...prev,
-      members: prev.members.filter((_, i) => i !== index),
-    }));
-  };
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     members: prev.members.filter((_, i) => i !== index),
+  //   }));
+  // };
 
   const fetchGroupBalance = async (groupAddr: string) => {
     if (!groupAddr) return;
