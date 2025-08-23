@@ -1,17 +1,24 @@
+# Dependencies
 node_modules
 npm-debug.log
-.git
+yarn-error.log
+pnpm-debug.log
+
+# Logs
+*.log
+logs/
+
+# Git
 .gitignore
-README.md
+
+# Env files
 .env
-.env.local
-.env.production
-.env.development
+
+# Build / coverage
 .nyc_output
 coverage
-.nyc_output
-*.log
-logs
+
+# IDE / editor
 .DS_Store
 .vscode
 .idea

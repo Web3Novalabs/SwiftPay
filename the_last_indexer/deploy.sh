@@ -1,71 +1,46 @@
 #!/bin/bash
 
 # Deploy script for Paymesh Starknet Indexer
-# Usage: ./deploy.sh [build|build-memory|start|stop|restart|logs|status]
+# Usage: ./deploy.sh [build|start|stop|restart|logs|status|clean]
 
-set -e
+set -euo pipefail
 
-COMPOSE_FILE="docker-compose.yml"
-SERVICE_NAME="paymesh-indexer"
+COMPOSE="docker-compose -f docker-compose.yml"
+SERVICE="paymesh-indexer"
 
-case "$1" in
+case "${1:-}" in
   build)
     echo "🔨 Building Docker image..."
-    docker-compose -f $COMPOSE_FILE build --no-cache
-    echo "✅ Build completed!"
-    ;;
-  build-memory)
-    echo "🔨 Building Docker image with memory optimization..."
-    echo "⚠️  This build uses npm instead of pnpm for better memory management"
-    docker build -f Dockerfile.alternative -t paymesh-indexer:memory-optimized .
-    echo "✅ Memory-optimized build completed!"
+    $COMPOSE build --no-cache
     ;;
   start)
     echo "🚀 Starting indexer..."
-    docker-compose -f $COMPOSE_FILE up -d
-    echo "✅ Indexer started!"
+    $COMPOSE up -d
     ;;
   stop)
     echo "🛑 Stopping indexer..."
-    docker-compose -f $COMPOSE_FILE down
-    echo "✅ Indexer stopped!"
+    $COMPOSE down
     ;;
   restart)
     echo "🔄 Restarting indexer..."
-    docker-compose -f $COMPOSE_FILE restart
-    echo "✅ Indexer restarted!"
+    $COMPOSE down
+    $COMPOSE up -d
     ;;
   logs)
     echo "📋 Showing logs..."
-    docker-compose -f $COMPOSE_FILE logs -f $SERVICE_NAME
+    $COMPOSE logs -f $SERVICE
     ;;
   status)
     echo "📊 Container status:"
-    docker-compose -f $COMPOSE_FILE ps
-    echo ""
-    echo "📈 Resource usage:"
-    docker stats --no-stream $SERVICE_NAME
+    $COMPOSE ps
     ;;
   clean)
-    echo "🧹 Cleaning up Docker resources..."
+    echo "🧹 Cleaning up unused Docker resources..."
     docker system prune -f
     docker volume prune -f
-    echo "✅ Cleanup completed!"
     ;;
   *)
-    echo "Usage: $0 {build|build-memory|start|stop|restart|logs|status|clean}"
-    echo ""
-    echo "Commands:"
-    echo "  build        - Build the Docker image with pnpm"
-    echo "  build-memory - Build with npm (better memory management)"
-    echo "  start        - Start the indexer"
-    echo "  stop         - Stop the indexer"
-    echo "  restart      - Restart the indexer"
-    echo "  logs         - Show logs"
-    echo "  status       - Show status and resource usage"
-    echo "  clean        - Clean up Docker resources"
-    echo ""
-    echo "💡 If you encounter memory issues during build, try 'build-memory'"
+    echo "Usage: $0 {build|start|stop|restart|logs|status|clean}"
     exit 1
     ;;
 esac

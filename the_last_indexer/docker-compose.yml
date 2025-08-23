@@ -1,21 +1,13 @@
-version: '3.8'
+version: "3.8"
 
 services:
   paymesh-indexer:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - NODE_OPTIONS=--max-old-space-size=2048
     container_name: paymesh-starknet-indexer
     restart: unless-stopped
     environment:
-      - DNA_TOKEN="${DNA_TOKEN}"
-      - API="${API}"
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          memory: 1G
-
+      DNA_TOKEN: ${DNA_TOKEN}
+      API: ${API}
+    mem_limit: 2g
