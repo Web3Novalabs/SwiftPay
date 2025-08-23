@@ -2,14 +2,14 @@ import { Contract, Account, cairo, uint256, RpcProvider } from "starknet";
 import { PAYMESH_ABI } from "../abi/swiftswap_abi";
 // import { useBalance } from "@starknet-react/core";
 
-// Contract configuration
-export const OLD_CONTRACT_ADDRESS =
-  "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
+// // Contract configuration
+// export const OLD_CONTRACT_ADDRESS =
+//   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
 export const PAYMESH_ADDRESS =
-  "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
-// export const CONTRACT_ADDRESS =
-//   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
-// ;
+  "0x03eb5cc3d473d59331c48096cafa360d52b49fcd6a08b14a6811223c773a2d73";
+// // export const CONTRACT_ADDRESS =
+// //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
+// // ;
 
 export const myProvider = new RpcProvider({
   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL,
@@ -66,84 +66,84 @@ export const formatGroupMembers = (members: GroupMember[]) => {
   }));
 };
 
-// Contract interaction functions
-export const createContractInstance = (account: Account): Contract => {
-  return new Contract(PAYMESH_ABI, PAYMESH_ADDRESS, account);
-};
+// // Contract interaction functions
+// export const createContractInstance = (account: Account): Contract => {
+//   return new Contract(PAYMESH_ABI, PAYMESH_ADDRESS, account);
+// };
 
-export const createGroup = async (
-  account: Account,
-  groupData: CreateGroupData
-): Promise<{ transaction_hash: string }> => {
-  try {
-    const contract = createContractInstance(account);
+// export const createGroup = async (
+//   account: Account,
+//   groupData: CreateGroupData
+// ): Promise<{ transaction_hash: string }> => {
+//   try {
+//     const contract = createContractInstance(account);
 
-    // Format the data
-    const formattedName = formatByteArray(groupData.name);
-    const formattedAmount = formatU256(groupData.amount);
-    const formattedMembers = formatGroupMembers(groupData.members);
+//     // Format the data
+//     const formattedName = formatByteArray(groupData.name);
+//     const formattedAmount = formatU256(groupData.amount);
+//     const formattedMembers = formatGroupMembers(groupData.members);
 
-    console.log("Creating group with data:", {
-      name: formattedName,
-      amount: formattedAmount,
-      members: formattedMembers,
-      tokenAddress: groupData.tokenAddress,
-    });
+//     console.log("Creating group with data:", {
+//       name: formattedName,
+//       amount: formattedAmount,
+//       members: formattedMembers,
+//       tokenAddress: groupData.tokenAddress,
+//     });
 
-    // Call the contract
-    const result = await contract.create_group(
-      formattedName,
-      formattedAmount,
-      formattedMembers,
-      groupData.tokenAddress
-    );
+//     // Call the contract
+//     const result = await contract.create_group(
+//       formattedName,
+//       formattedAmount,
+//       formattedMembers,
+//       groupData.tokenAddress
+//     );
 
-    console.log("Transaction result:", result);
-    return result;
-  } catch (error) {
-    console.error("Error creating group:", error);
-    throw error;
-  }
-};
+//     console.log("Transaction result:", result);
+//     return result;
+//   } catch (error) {
+//     console.error("Error creating group:", error);
+//     throw error;
+//   }
+// };
 
-export const getGroup = async (
-  account: Account,
-  groupId: string
-): Promise<object> => {
-  try {
-    const contract = createContractInstance(account);
-    const formattedGroupId = formatU256(groupId);
+// export const getGroup = async (
+//   account: Account,
+//   groupId: string
+// ): Promise<object> => {
+//   try {
+//     const contract = createContractInstance(account);
+//     const formattedGroupId = formatU256(groupId);
 
-    const result = await contract.get_group(formattedGroupId);
-    console.log("Group data:", result);
-    return result;
-  } catch (error) {
-    console.error("Error getting group:", error);
-    throw error;
-  }
-};
+//     const result = await contract.get_group(formattedGroupId);
+//     console.log("Group data:", result);
+//     return result;
+//   } catch (error) {
+//     console.error("Error getting group:", error);
+//     throw error;
+//   }
+// };
 
-// Hook for contract interactions
-export const useContract = (account: Account | null) => {
-  const createGroupWithContract = async (groupData: CreateGroupData) => {
-    if (!account) {
-      throw new Error("No account connected");
-    }
-    return await createGroup(account, groupData);
-  };
+// // Hook for contract interactions
+// export const useContract = (account: Account | null) => {
+//   const createGroupWithContract = async (groupData: CreateGroupData) => {
+//     if (!account) {
+//       throw new Error("No account connected");
+//     }
+//     return await createGroup(account, groupData);
+//   };
 
-  const getGroupWithContract = async (groupId: string) => {
-    if (!account) {
-      throw new Error("No account connected");
-    }
-    return await getGroup(account, groupId);
-  };
+//   const getGroupWithContract = async (groupId: string) => {
+//     if (!account) {
+//       throw new Error("No account connected");
+//     }
+//     return await getGroup(account, groupId);
+//   };
 
-  return {
-    createGroup: createGroupWithContract,
-    getGroup: getGroupWithContract,
-  };
-};
+//   return {
+//     createGroup: createGroupWithContract,
+//     getGroup: getGroupWithContract,
+//   };
+// };
 
 // Balance hook for contract interactions
 // export const { data: balance } = useBalance({
