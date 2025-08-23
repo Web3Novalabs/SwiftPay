@@ -1,8 +1,18 @@
-"use client"
-import { Search, Users, Calendar, Plus, LucideUsers, Loader2 } from "lucide-react";
+"use client";
+import {
+  Search,
+  Users,
+  Calendar,
+  Plus,
+  LucideUsers,
+  Loader2,
+} from "lucide-react";
 import React, { useMemo, useEffect } from "react";
 import { Sofia_Sans } from "next/font/google";
 import { useAccount } from "@starknet-react/core";
+import { useRouter } from "next/navigation";
+import { GroupSummary } from "@/types/group";
+import Link from "next/link";
 // import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
 
 const sofiaSans = Sofia_Sans({
@@ -11,14 +21,14 @@ const sofiaSans = Sofia_Sans({
   variable: "--font-gt-walsheim-trial",
 });
 
-const mockGroups = [
+const mockGroups: GroupSummary[] = [
   {
     id: 1,
     name: "TheBuidl Hackathon",
     role: "Creator",
     members: 5,
     dateCreated: "29th - 08 - 2025",
-    isCreator: true
+    isCreator: true,
   },
   {
     id: 2,
@@ -26,7 +36,7 @@ const mockGroups = [
     role: "Member",
     members: 5,
     dateCreated: "29th - 08 - 2025",
-    isCreator: false
+    isCreator: false,
   },
   {
     id: 3,
@@ -34,7 +44,7 @@ const mockGroups = [
     role: "Creator",
     members: 5,
     dateCreated: "29th - 08 - 2025",
-    isCreator: true
+    isCreator: true,
   },
   {
     id: 4,
@@ -42,7 +52,7 @@ const mockGroups = [
     role: "Member",
     members: 5,
     dateCreated: "15th - 09 - 2025",
-    isCreator: false
+    isCreator: false,
   },
   {
     id: 5,
@@ -50,13 +60,14 @@ const mockGroups = [
     role: "Member",
     members: 5,
     dateCreated: "22nd - 10 - 2025",
-    isCreator: false
-  }
+    isCreator: false,
+  },
 ];
 
 const MyGroupsPage = () => {
   const totalGroups = mockGroups.length;
-  const groupsCreated = mockGroups.filter(group => group.isCreator).length;
+  const groupsCreated = mockGroups.filter((group) => group.isCreator).length;
+  const router = useRouter();
 
   const { account, address } = useAccount();
 
@@ -86,17 +97,19 @@ const MyGroupsPage = () => {
   // }, [account, groupSharesData, groupSharesError]);
 
   const groupSharesLoading = true;
-  
+
   return (
     <div className="min-h-screen text-white p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">My groups</h1>
-        <p className="text-gray-300 text-lg">Filter between all, cleared and pending</p>
+        <p className="text-gray-300 text-lg">
+          Filter between all, cleared and pending
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative">
-          <select 
+          <select
             className="bg-none border border-gray-600 px-4 py-3 pr-10 text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
             defaultValue="all"
           >
@@ -105,11 +118,11 @@ const MyGroupsPage = () => {
             <option value="pending">Pending</option>
           </select>
         </div>
-        
+
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search group by name.."
             className=" bg-none border border-gray-600 pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
           />
@@ -126,7 +139,9 @@ const MyGroupsPage = () => {
                 <p className="text-gray-300">Loading...</p>
               </div>
             ) : (
-              <p className="text-gray-300">Total Groups - <b className="text-white">{totalGroups}</b> </p>
+              <p className="text-gray-300">
+                Total Groups - <b className="text-white">{totalGroups}</b>{" "}
+              </p>
             )}
           </div>
         </div>
@@ -140,70 +155,61 @@ const MyGroupsPage = () => {
                 <p className="text-gray-300">Loading...</p>
               </div>
             ) : (
-              <p className="text-gray-300">Groups Created - <b className="text-white">{groupsCreated}</b> </p>
+              <p className="text-gray-300">
+                Groups Created - <b className="text-white">{groupsCreated}</b>{" "}
+              </p>
             )}
           </div>
         </div>
       </div>
 
-      {groupSharesLoading ? (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}>
-          {[1, 2, 3, 4, 5, 6].map((index) => (
-            <div key={index} className="bg-[#2A2D35] border-none text-sm p-6 animate-pulse">
-              <div className="flex justify-between items-start mb-4">
-                <div className="h-6 bg-gray-600 rounded w-32"></div>
-                <div className="h-6 bg-gray-600 rounded w-20"></div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-gray-600 rounded"></div>
-                    <div className="h-4 bg-gray-600 rounded w-24"></div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-gray-600 rounded"></div>
-                    <div className="h-4 bg-gray-600 rounded w-28"></div>
-                  </div>
-                </div>
-                <div className="h-8 bg-gray-600 rounded w-20"></div>
-              </div>
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}
+      >
+        {mockGroups.map((group) => (
+          <div
+            key={group.id}
+            className="bg-[#2A2D35] border-none text-sm p-6 hover:border-gray-800 transition-colors"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-white">{group.name}</h3>
+              <span
+                className={`px-3 py-1 text-sm rounded-sm font-medium ${
+                  group.isCreator
+                    ? "bg-[#10273E] text-[#0073E6]"
+                    : "bg-[#103E3A] text-[#00E69D]"
+                }`}
+              >
+                {group.role}
+              </span>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}>
-          {mockGroups.map((group) => (
-            <div key={group.id} className="bg-[#2A2D35] border-none text-sm p-6 hover:border-gray-800 transition-colors">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold text-white">{group.name}</h3>
-                <span className={`px-3 py-1 text-sm rounded-sm font-medium ${
-                  group.isCreator 
-                    ? 'bg-[#10273E] text-[#0073E6]' 
-                    : 'bg-[#103E3A] text-[#00E69D]'
-                }`}>
-                  {group.role}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="space-y-3 mb-6 text-[12px]">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <Users className="w-4 h-4" />
-                    <span>Members | <b className="text-white"> {group.members} </b> </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <Calendar className="w-4 h-4" />
-                    <span>Date Created | <b className="text-white"> {group.dateCreated} </b> </span>
-                  </div>
+            <div className="flex justify-between items-center">
+              <div className="space-y-3 mb-6 text-[12px]">
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Users className="w-4 h-4" />
+                  <span>
+                    Members | <b className="text-white"> {group.members} </b>{" "}
+                  </span>
                 </div>
-                
-                <button className="text-white border border-gray-800 rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-3">
-                  View Group
-                </button>
+                <div className="flex items-center gap-3 text-gray-300">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    Date Created |{" "}
+                    <b className="text-white"> {group.dateCreated} </b>{" "}
+                  </span>
+                </div>
               </div>
+
+              <Link
+                href={`/dashboard/my-groups/${group.id}`}
+                className="text-white border border-gray-800 rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-3 hover:bg-[#5a5a5a] transition-colors cursor-pointer"
+              >
+                View Group
+              </Link>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

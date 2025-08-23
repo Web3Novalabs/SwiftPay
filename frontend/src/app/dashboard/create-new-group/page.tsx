@@ -294,14 +294,6 @@ const CreateNewGroup = () => {
     }));
   };
 
-  // Remove member
-  const removeMember = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      members: prev.members.filter((_, i) => i !== index),
-    }));
-  };
-
   // Update member
   const updateMember = (
     index: number,
