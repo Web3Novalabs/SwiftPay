@@ -13,6 +13,8 @@ pub struct Group {
     pub name: ByteArray,
     pub usage_limit_reached: bool,
     pub creator: ContractAddress,
+    pub group_address: ContractAddress,
+    pub date: u64,
 }
 
 // GroupUpdateRequest type for tracking update requests

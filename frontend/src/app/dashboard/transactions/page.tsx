@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useContractFetch } from "@/hooks/useContractInteraction";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 
 // Sample transaction data
 const transactionData = [
@@ -165,7 +167,12 @@ const TransactionsPage = () => {
     if (filter === "pending") return transaction.status === "In progress";
     return true;
   });
-
+  const { readData: groupList } = useContractFetch(
+    PAYMESH_ABI,
+    "get_all_groups",
+    []
+  ); 
+  console.log(groupList)
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -239,13 +246,7 @@ const TransactionsPage = () => {
                       {transaction.date}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-sm ${
-                          transaction.status === "Paid"
-                            ? "bg-[#4cea69] text-green-800"
-                            : "bg-[#d7cd61] text-yellow-800"
-                        }`}
-                      >
+                      <span className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2]">
                         {transaction.status}
                       </span>
                     </td>
