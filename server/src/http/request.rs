@@ -28,39 +28,36 @@ pub async fn pay(
     let account = signer_account();
     let contract_address = contract_address_felt();
 
-    // if !is_valid_address(address.as_str()) {
-    //     let err = format!("INVALID ADDRESS");
-    //     let message = Response {
-    //         message: err.clone(),
-    //     };
-    //     return Err((StatusCode::BAD_GATEWAY, Json(message)));
-    // } else {
-    //     Ok((StatusCode::OK, Json("VALID ADDRESS".to_string())))
-    // }
-    Ok((StatusCode::OK, Json("VALID ADDRESS".to_string())))
-    // let address = Felt::from_hex(address.as_str()).expect("TOKEN ADDRESS NOT PROVIDED");
+    if !is_valid_address(address.as_str()) {
+        let err = format!("INVALID ADDRESS");
+        let message = Response {
+            message: err.clone(),
+        };
+        return Err((StatusCode::BAD_GATEWAY, Json(message)));
+    } 
+    let address = Felt::from_hex(address.as_str()).expect("TOKEN ADDRESS NOT PROVIDED");
 
-    // let pay_call = Call {
-    //     to: contract_address,
-    //     selector: get_selector_from_name("pay").unwrap(),
-    //     calldata: vec![address],
-    // };
+    let pay_call = Call {
+        to: contract_address,
+        selector: get_selector_from_name("pay").unwrap(),
+        calldata: vec![address],
+    };
 
-    // let execute = account.execute_v3(vec![pay_call]).send().await;
+    let execute = account.execute_v3(vec![pay_call]).send().await;
 
-    // match execute {
-    //     Ok(data) => {
-    //         println!("DATA:  {:?}", data.transaction_hash);
-    //         let msg = format!("AMOUNT SPLIT SUCCESFULLY {}", data.transaction_hash);
-    //         Ok((StatusCode::OK, Json(msg)))
-    //     }
-    //     Err(data) => {
-    //         println!("ERROR:  {}", data);
-    //         let err = format!("unable to make request");
-    //         let message = Response {
-    //             message: err.clone(),
-    //         };
-    //         return Err((StatusCode::BAD_GATEWAY, Json(message)));
-    //     }
-    // }
+    match execute {
+        Ok(data) => {
+            println!("DATA:  {:?}", data.transaction_hash);
+            let msg = format!("AMOUNT SPLIT SUCCESFULLY {}", data.transaction_hash);
+            Ok((StatusCode::OK, Json(msg)))
+        }
+        Err(data) => {
+            println!("ERROR:  {}", data);
+            let err = format!("unable to make request");
+            let message = Response {
+                message: err.clone(),
+            };
+            return Err((StatusCode::BAD_GATEWAY, Json(message)));
+        }
+    }
 }
