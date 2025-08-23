@@ -105,6 +105,23 @@ export default function CreateGroupForm() {
     hash: resultHash,
   });
 
+  const create_group = async () => {
+    if (!account) {
+      console.error("Account is undefined");
+      return;
+    }
+    await account.execute({
+      contractAddress: "0x05aff3ec87038c50ccbab5d83485a8a7adb9c1b92ecdd61af6c2e72b778ce823",
+      entrypoint: "create_group",
+      calldata: CallData.compile({
+        name: byteArray.byteArrayFromString("hello"),
+        members: formMembers,
+        token_address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        usage_count:cairo.uint256(1),
+      }),
+    });
+  }
+
   // Fetch group balance
   const fetchGroupBalance = async (groupAddr: string) => {
     if (!groupAddr) return;
@@ -700,6 +717,9 @@ export default function CreateGroupForm() {
               </button>
             </div> */}
           </form>
+          <button onClick={create_group}>
+            create
+          </button>
         </>
       )}
     </div>

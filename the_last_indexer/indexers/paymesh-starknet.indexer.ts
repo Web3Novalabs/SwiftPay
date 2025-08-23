@@ -15,7 +15,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
     streamUrl,
     finality: "accepted",
-    startingBlock: BigInt(1625628),
+    startingBlock: BigInt(1673184),
     filter: {
       events: [
         {
