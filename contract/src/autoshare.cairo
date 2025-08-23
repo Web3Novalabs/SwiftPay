@@ -210,7 +210,12 @@ pub mod AutoShare {
             let id = self.group_count.read() + 1;
 
             let mut group = Group {
-                id, name: name.clone(), usage_limit_reached: false, creator: get_caller_address(),date:get_block_timestamp(),group_address:get_caller_address(),
+                id,
+                name: name.clone(),
+                usage_limit_reached: false,
+                creator: get_caller_address(),
+                date: get_block_timestamp(),
+                group_address: get_caller_address(),
             };
             self.groups.write(id, group.clone());
 
@@ -259,8 +264,8 @@ pub mod AutoShare {
                         },
                     ),
                 );
-                group.group_address = contract_address_for_group;
-                self.groups.write(id, group.clone());
+            group.group_address = contract_address_for_group;
+            self.groups.write(id, group.clone());
 
             contract_address_for_group
         }
