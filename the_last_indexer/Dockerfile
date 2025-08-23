@@ -10,8 +10,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies with memory optimization
-RUN pnpm install --frozen-lockfile --network-timeout=100000 --maxsockets=1
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -31,8 +31,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install only production dependencies with memory optimization
-RUN pnpm install --frozen-lockfile --prod --network-timeout=100000 --maxsockets=1
+# Install only production dependencies
+RUN pnpm install --frozen-lockfile --prod
 
 # Copy built files from build stage
 COPY --from=base /app/dist ./dist
