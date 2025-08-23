@@ -1,6 +1,10 @@
 "use client";
 
-import { StarknetConfig, InjectedConnector, paymasterRpcProvider } from "@starknet-react/core";
+import {
+  StarknetConfig,
+  InjectedConnector,
+  paymasterRpcProvider,
+} from "@starknet-react/core";
 import { sepolia, mainnet } from "@starknet-react/chains";
 import { jsonRpcProvider } from "@starknet-react/core";
 
@@ -27,6 +31,7 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
       })}
       chains={chains}
       connectors={connectors}
+      autoConnect={true}
       provider={jsonRpcProvider({
         rpc: () => ({ nodeUrl: process.env.NEXT_PUBLIC_RPC_URL }),
       })}

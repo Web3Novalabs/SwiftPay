@@ -28,15 +28,15 @@ import { myProvider } from "@/utils/contract";
 import QRCode from "react-qr-code";
 import { STRK_ABI } from "@/abi/strk_abi";
 import { useCallback } from "react";
+import QRcode from "../dashboard/components/QRcode";
 
 export const OLD_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-  export const SWIFTPAY_CONTRACT_ADDRESS =
-    "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
-  
-    // export const SWIFTPAY_CONTRACT_ADDRESS =
-    //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
-  
+export const SWIFTPAY_CONTRACT_ADDRESS =
+  "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
+
+// export const SWIFTPAY_CONTRACT_ADDRESS =
+//   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
 
 export const STRK_SEPOLIA =
   "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
@@ -147,28 +147,29 @@ export default function CreateGroupForm() {
     }
   };
 
-  // useEffect(() => {
-  //   console.log(data, error);
-  //   let m;
-  //   if (!data) return;
-  //   if (
-  //     data.value &&
-  //     typeof data.value === "object" &&
-  //     "events" in data.value &&
-  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  //     Array.isArray((data.value as any).events)
-  //   ) {
-  //     m = (data.value as any).events[3]?.data[0];
-  //     m = m.replace("0x", "0x0");
-  //     setGroupAddress(m);
-  //     setIsSuccess(true);
-  //     // Fetch balance when group address is set
-  //     fetchGroupBalance(m);
-  //   } else {
-  //     m = undefined;
-  //   }
-  //   console.log(m);
-  // }, [data, error]);
+  useEffect(() => {
+    console.log(data, error);
+    let m;
+    if (!data) return;
+    if (
+      data.value &&
+      typeof data.value === "object" &&
+      "events" in data.value &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Array.isArray((data.value as any).events)
+    ) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      m = (data.value as any).events[3]?.data[0];
+      m = m.replace("0x", "0x0");
+      setGroupAddress(m);
+      setIsSuccess(true);
+      // Fetch balance when group address is set
+      fetchGroupBalance(m);
+    } else {
+      m = undefined;
+    }
+    console.log(m);
+  }, [data, error]);
 
   const totalPercentage = formData.members.reduce(
     (sum, member) => sum + member.percentage,
@@ -250,7 +251,7 @@ export default function CreateGroupForm() {
             name: byteArray.byteArrayFromString(formData.name),
             members: formData.members,
             token_address: formData.tokenAddress,
-            usage_count:cairo.uint256(1),
+            usage_count: cairo.uint256(1),
           }),
         };
 
@@ -293,7 +294,6 @@ export default function CreateGroupForm() {
         setResultHash(result.transaction_hash);
         console.log(status);
       }
-
 
       // Reset form
       setFormData({
@@ -397,128 +397,15 @@ export default function CreateGroupForm() {
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       {isSuccess ? (
         // Success State with QR Code and Copy Address
-        <div className="text-center">
-          <div className="mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Group Created Successfully!
-            </h1>
-            <p className="text-gray-600">
-              Your group has been created on the blockchain. Here&apos;s the
-              group address:
-            </p>
-          </div>
-
-          {/* Group Address Display */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Group Address
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={groupAddress}
-                readOnly
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white font-mono text-sm"
-              />
-              <button
-                onClick={copyToClipboard}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  copySuccess
-                    ? "bg-green-500 text-white"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-                {copySuccess ? "Copied!" : "Copy"}
-              </button>
-            </div>
-          </div>
-
-          {/* Group Balance Display */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Group Balance
-            </h3>
-            <div className="flex items-center justify-center gap-2">
-              {isLoadingBalance ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-600">
-                    Loading balance...
-                  </span>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {groupBalance} STRK
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Current STRK balance in the group
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Commented out ETH and USD balance displays */}
-            {/*
-            <div className="mt-2 text-xs text-gray-500">
-              <div className="flex justify-between">
-                <span>ETH: 0.0000 Ξ</span>
-                <span>USD: $0.00</span>
-                <span>STRK: {groupBalance}</span>
-              </div>
-            </div>
-            */}
-          </div>
-
-          {/* QR Code */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              QR Code
-            </h2>
-            <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
-              <QRCode value={groupAddress} size={200} level="H" />
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              Scan this QR code to get the group address
-            </p>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={resetForm}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Create Another Group
-            </button>
-            <button
-              onClick={() =>
-                window.open(
-                  `https://sepolia.starkscan.co/contract/${groupAddress}`,
-                  "_blank"
-                )
-              }
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
-            >
-              View on Starkscan
-            </button>
-          </div>
-        </div>
+        <QRcode
+          groupAddress={groupAddress}
+          groupBalance={groupBalance}
+          isLoadingBalance={isLoadingBalance}
+          copySuccess={copySuccess}
+          copyToClipboard={copyToClipboard}
+          resetForm={resetForm}
+          closeModal={() => {}}
+        />
       ) : (
         // Original Form
         <>
