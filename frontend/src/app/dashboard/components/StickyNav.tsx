@@ -25,6 +25,11 @@ const NavItems = [
 const StickyNav = () => {
   const [active, setActive] = useState("Create new group");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeLink, setActiveLink] = useState("/dashboard/create-new-group");
+
+  const handleLinkClick = (link: string) => {
+    setActiveLink(link);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,14 +50,17 @@ const StickyNav = () => {
       <ul className="flex items-center transition-all duration-500 ease-in-out space-x-4 gap-2 sm:gap-3 md:gap-5 p-2 sm:p-3">
         {NavItems.map((item, i) => {
           return (
-            <Link href={item.link} key={i}>
+            <Link
+              href={item.link}
+              key={i}
+              onClick={() => handleLinkClick(item.link)}
+            >
               <li
                 className={`cursor-pointer text-white !py-1 !px-2 sm:!px-3 md:!px-4 transition-all text-xs sm:text-sm md:text-base ${
-                  active === item.name
+                  item.link === activeLink
                     ? "border-gradient-create-sticky !py-1.5 sm:!py-2 md:!py-2.5 !px-4 md:!px-6"
-                    : ""
+                    : "border-gradient-create-sticky-active"
                 }`}
-                onClick={() => setActive(item.name)}
               >
                 {item.name}
               </li>

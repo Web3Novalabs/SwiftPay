@@ -1,3 +1,5 @@
+"use client";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -8,58 +10,366 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useEffect, useState } from "react";
+import {
+  useAccount,
+  useBalance,
+  useTransactionReceipt,
+} from "@starknet-react/core";
+import {
+  byteArray,
+  cairo,
+  CallData,
+  Contract,
+  FeeMode,
+  PaymasterDetails,
+} from "starknet";
+import { myProvider } from "@/utils/contract";
 import React from "react";
 import group1icon from "../../../../public/PlusCircle.svg";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import group4icon from "../../../../public/UsersFour.svg";
+import QRcode from "../components/QRcode";
+import Loading from "../components/Loading";
+import { SWIFTPAY_CONTRACT_ADDRESS } from "@/constants/abi";
+
+interface GroupMember {
+  addr: string;
+  percentage: number;
+}
+
+interface CreateGroupFormData {
+  name: string;
+  amount: string;
+  tokenAddress: string;
+  members: GroupMember[];
+}
 
 const CreateNewGroup = () => {
-  const groupData = {
-    name: "Paymesh",
-    totalMembers: 5,
+  const { account } = useAccount();
+
+  // const { createGroup, isCreatingGroup } = useContractInteraction();
+
+  const [formData, setFormData] = useState<CreateGroupFormData>({
+    name: "",
+    amount: "0",
+    tokenAddress:
+      "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     members: [
       {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
+        addr: "0x05a99911249cD55eF49B196E0f380AC086C6f3b2459adb8E9A33Ae8610e1C7Ed",
+        percentage: 30,
       },
       {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
-      },
-      {
-        address: "0x4A7d5cB67eA4F6e4B7cC3B3aE3f8fD9bB2cF9a1B",
-        percentage: 20,
+        addr: "0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a",
+        percentage: 50,
       },
     ],
+  });
+
+  const totalPercentage = formData.members.reduce(
+    (sum, member) =>
+      sum + (typeof member.percentage === "number" ? member.percentage : 0),
+    0
+  );
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [groupAddress, setGroupAddress] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [groupBalance, setGroupBalance] = useState<string>("0");
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isCheckboxChecked, setIsCheckboxChecked] = useState(false);
+
+  const strkTokenAddress =
+    "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+
+  const [resultHash, setResultHash] = useState("");
+  const [hasProcessedTransaction, setHasProcessedTransaction] = useState(false);
+
+  const { data, error } = useTransactionReceipt({
+    hash: resultHash,
+  });
+
+  useEffect(() => {
+    console.log(data, error);
+    let m;
+    if (!data || hasProcessedTransaction) return;
+    if (
+      data.value &&
+      typeof data.value === "object" &&
+      "events" in data.value &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Array.isArray((data.value as any).events)
+    ) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      m = (data.value as any).events[3]?.data[0];
+      m = m.replace("0x", "0x0");
+      setGroupAddress(m);
+      setIsSuccess(true);
+      setHasProcessedTransaction(true);
+      // Fetch balance when group address is set
+      fetchGroupBalance(m);
+    } else {
+      m = undefined;
+    }
+    console.log(m);
+  }, [data, error, hasProcessedTransaction]);
+
+  // Reset success state when component unmounts or when navigating away
+  useEffect(() => {
+    return () => {
+      setIsSuccess(false);
+      setGroupAddress("");
+      setGroupBalance("0");
+      setHasProcessedTransaction(false);
+      setResultHash("");
+    };
+  }, []);
+
+  const fetchGroupBalance = async (groupAddr: string) => {
+    if (!groupAddr) return;
+
+    setIsLoadingBalance(true);
+    try {
+      // STRK token address on Sepolia
+
+      // Create a contract instance for the STRK token
+      const strkContract = new Contract(
+        [
+          {
+            name: "balanceOf",
+            type: "function",
+            inputs: [{ name: "account", type: "felt" }],
+            outputs: [{ name: "balance", type: "Uint256" }],
+            state_mutability: "view",
+          },
+        ],
+        strkTokenAddress,
+        myProvider
+      );
+
+      // Call balanceOf function
+      const result = await strkContract.balanceOf(groupAddr);
+      console.log("result in full_______", result);
+      const balanceValue = result.balance;
+
+      console.log("balanceValue______", balanceValue);
+
+      const balanceInStrk =
+        parseFloat(balanceValue.toString()) / Math.pow(10, 18);
+      setGroupBalance(balanceInStrk.toFixed(4));
+    } catch (error) {
+      console.error("Error fetching group balance:", error);
+      setGroupBalance("Error");
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (!formData.name.trim()) {
+      console.error("Group name is required");
+      return;
+    }
+
+    if (totalPercentage !== 100) {
+      console.error("Total percentage must be exactly 100%");
+      return;
+    }
+
+    if (!account) {
+      console.error("No account connected");
+      return;
+    }
+
+    if (!isCheckboxChecked) {
+      console.error("Please accept the terms by checking the checkbox");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // const amount = parseFloat(formData.amount);
+
+      if (account != undefined) {
+        const swiftpayCall = {
+          contractAddress: SWIFTPAY_CONTRACT_ADDRESS,
+          entrypoint: "create_group",
+          calldata: CallData.compile({
+            name: byteArray.byteArrayFromString(formData.name),
+            members: formData.members,
+            token_address: formData.tokenAddress,
+            usage_count: cairo.uint256(1),
+          }),
+        };
+
+        const approveCall = {
+          contractAddress: strkTokenAddress,
+          entrypoint: "approve",
+          calldata: [
+            SWIFTPAY_CONTRACT_ADDRESS, // spender
+            "1000000000000000000", // amount (1 STRK in wei)
+            "0",
+          ],
+        };
+
+        const multicallData = [approveCall, swiftpayCall];
+        // const result = await account.execute(multicallData)
+
+        const feeDetails: PaymasterDetails = {
+          feeMode: {
+            mode: "sponsored",
+          },
+        };
+
+        const feeEstimation = await account?.estimatePaymasterTransactionFee(
+          [...multicallData],
+          feeDetails
+        );
+
+        const result = await account?.executePaymasterTransaction(
+          [...multicallData],
+          feeDetails,
+          feeEstimation?.suggested_max_fee_in_gas_token
+        );
+
+        const status = await myProvider.waitForTransaction(
+          result?.transaction_hash as string
+        );
+
+        console.log(result);
+
+        setResultHash(result.transaction_hash);
+        console.log(status);
+      }
+
+      // Reset form
+      setFormData({
+        name: "",
+        amount: "",
+        tokenAddress: "",
+        members: [
+          { addr: "", percentage: 0 },
+          { addr: "", percentage: 0 },
+        ],
+      });
+      setIsCheckboxChecked(false);
+    } catch (error) {
+      console.error("Error creating group:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Add new member
+  const addMember = () => {
+    setFormData((prev) => ({
+      ...prev,
+      members: [...prev.members, { addr: "", percentage: 0 }],
+    }));
+  };
+
+  // Update member
+  const updateMember = (
+    index: number,
+    field: keyof GroupMember,
+    value: string | number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.map((member, i) => {
+        if (i === index) {
+          if (field === "percentage") {
+            // Ensure percentage is a number and doesn't exceed 100
+            const numValue =
+              typeof value === "string" ? parseInt(value) || 0 : value;
+            const clampedValue = Math.min(Math.max(numValue, 0), 100);
+            return { ...member, percentage: clampedValue };
+          }
+          if (field === "addr") {
+            // Ensure addr is always a string
+            return { ...member, addr: String(value) };
+          }
+          return { ...member, [field]: value };
+        }
+        return member;
+      }),
+    }));
+  };
+
+  // Auto-distribute percentages evenly
+  const distributeEvenly = () => {
+    const memberCount = formData.members.length;
+    const percentagePerMember = Math.floor(100 / memberCount);
+    const remainder = 100 % memberCount;
+
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.map((member, index) => ({
+        ...member,
+        percentage: percentagePerMember + (index < remainder ? 1 : 0),
+      })),
+    }));
+  };
+
+  // Copy address to clipboard
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(groupAddress);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+    }
+  };
+
+  // Reset form and success state
+  const resetForm = () => {
+    setIsSuccess(false);
+    setGroupAddress("");
+    setGroupBalance("0");
+    setIsSubmitting(false);
+    setCopySuccess(false);
+    setIsLoadingBalance(false);
+    setIsCheckboxChecked(false);
+    setHasProcessedTransaction(false);
+    setResultHash("");
+    setFormData({
+      name: "",
+      amount: "",
+      tokenAddress:
+        "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      members: [
+        {
+          addr: "",
+          percentage: 0,
+        },
+        {
+          addr: "",
+          percentage: 0,
+        },
+      ],
+    });
+  };
+
+  // Force close modal and reset everything
+  const forceCloseModal = () => {
+    setIsSuccess(false);
+    setGroupAddress("");
+    setGroupBalance("0");
+    setIsSubmitting(false);
+    setCopySuccess(false);
+    setIsLoadingBalance(false);
+    setIsCheckboxChecked(false);
+    setHasProcessedTransaction(false);
+    setResultHash("");
   };
 
   return (
@@ -80,6 +390,10 @@ const CreateNewGroup = () => {
         <p className="text-[#E2E2E2] text-sm sm:text-base">Group Name</p>
         <Input
           placeholder="Enter Group Name"
+          value={formData.name}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, name: e.target.value }))
+          }
           className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
         />
       </div>
@@ -148,32 +462,58 @@ const CreateNewGroup = () => {
       </div>
 
       <div className="mt-8 sm:mt-10">
-        <h2 className="text-[#E2E2E2] text-base sm:text-lg pb-3 sm:pb-5 font-semibold">
-          Members configuration
-        </h2>
-
-        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-          <div className="w-full sm:w-[75%]">
-            <p className="text-[#E2E2E2] text-sm sm:text-base">
-              Wallet address
-            </p>
-            <Input
-              placeholder="Enter wallet address"
-              className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
-            />
-          </div>
-
-          <div className="w-full sm:w-[25%]">
-            <p className="text-[#E2E2E2] text-sm sm:text-base">
-              Enter Percentage
-            </p>
-            <Input
-              type="number"
-              placeholder="Enter percentage"
-              className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
-            />
-          </div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-[#E2E2E2] text-base sm:text-lg font-semibold">
+            Members configuration
+          </h2>
+          <button
+            onClick={distributeEvenly}
+            className=" py-2 px-4 w-fit border-gradient rounded-sm bg-[#FFFFFF0D] text-[#E2E2E2] flex items-center justify-center gap-2 hover:bg-opacity-10 transition-colors cursor-pointer"
+          >
+            Distribute Evenly
+          </button>
         </div>
+
+        {formData.members.map((member, index) => (
+          <div
+            key={index}
+            className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
+          >
+            <div className="w-full sm:w-[75%]">
+              <p className="text-[#E2E2E2] text-sm sm:text-base">
+                Wallet address
+              </p>
+              <Input
+                placeholder="Enter wallet address"
+                value={member.addr}
+                onChange={(e) => updateMember(index, "addr", e.target.value)}
+                className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
+              />
+            </div>
+
+            <div className="w-full sm:w-[25%]">
+              <p className="text-[#E2E2E2] text-sm sm:text-base">
+                Enter Percentage
+              </p>
+              <Input
+                type="text"
+                placeholder="Enter percentage"
+                value={member.percentage || ""}
+                onChange={(e) => {
+                  // Only allow numbers 0-100
+                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  const numValue = parseInt(value) || 0;
+                  if (numValue <= 100) {
+                    updateMember(index, "percentage", numValue);
+                  }
+                }}
+                pattern="[0-9]*"
+                inputMode="numeric"
+                className="mt-2 py-4 sm:py-6 px-3 sm:px-4 rounded-sm bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base"
+              />
+            </div>
+          </div>
+        ))}
 
         <div className="mt-8 sm:mt-10 w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
           {/* Total Percentage Display */}
@@ -182,22 +522,52 @@ const CreateNewGroup = () => {
               <p className="text-[#E2E2E2] text-xs sm:text-[15px]">
                 Total percentage must equal
               </p>
-              <p className="text-[#E2E2E2] text-xs sm:text-[15px]">
-                0% of 100%
-              </p>
+              <div className="text-[#E2E2E2] text-xs sm:text-[15px]">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700"></span>
+                  <span
+                    className={`text-lg font-bold ${
+                      totalPercentage === 100
+                        ? "text-green-600"
+                        : totalPercentage > 100
+                        ? "text-red-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {totalPercentage}%
+                  </span>
+                </div>
+                {totalPercentage !== 100 && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {totalPercentage < 100
+                      ? `${100 - totalPercentage}% remaining`
+                      : `${totalPercentage - 100}% over`}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Progress Bar */}
             <div className="w-full bg-[#374151] rounded-full h-2">
               <div
-                className="bg-[#8B5CF6] h-2 rounded-full"
-                style={{ width: "0%" }}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  totalPercentage === 100
+                    ? "bg-green-500"
+                    : totalPercentage > 100
+                    ? "bg-red-500"
+                    : "bg-[#8B5CF6]"
+                }`}
+                style={{ width: `${Math.min(totalPercentage, 100)}%` }}
               ></div>
             </div>
           </div>
 
           <div className="w-full sm:w-[25%]">
-            <button className="mt-2 py-3 px-4 w-full border-gradient rounded-sm bg-[#FFFFFF0D] text-[#E2E2E2] flex items-center justify-center gap-2 hover:bg-opacity-10 transition-colors cursor-pointer">
+            {/* Add Member Button */}
+            <button
+              onClick={addMember}
+              className="mt-2 py-3 px-4 w-full border-gradient rounded-sm bg-[#FFFFFF0D] text-[#E2E2E2] flex items-center justify-center gap-2 hover:bg-opacity-10 transition-colors cursor-pointer"
+            >
               <span>
                 <Image
                   src={group1icon}
@@ -278,19 +648,19 @@ const CreateNewGroup = () => {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[#E2E2E2] text-sm sm:text-base">
-                {groupData.name}
+                {formData.name}
               </span>
               <span className="text-[#E2E2E2] text-sm sm:text-base">
-                {groupData.totalMembers}
+                {formData.members.length}
               </span>
             </div>
           </div>
 
           {/* Member Details - Scrollable */}
-          <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 pr-2">
-            {groupData.members.map((member, index) => (
-              <div key={index} className="border-b border-[#FFFFFF0D] pb-1.5">
-                <div className="flex items-center justify-between">
+          <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 pr-2">
+            {formData.members.map((member, index) => (
+              <div key={index} className="border-b border-[#FFFFFF0D] pb-3">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-[#8398AD] text-sm sm:text-base font-semibold">
                     Wallet address:
                   </span>
@@ -298,13 +668,17 @@ const CreateNewGroup = () => {
                     Percentage:
                   </span>
                 </div>
-                <div className="flex items-center text-left justify-between">
-                  <span className="text-[#E2E2E2] text-xs sm:text-base">
-                    {member.address}
-                  </span>
-                  <span className="text-[#E2E2E2] text-left text-xs sm:text-base">
-                    {member.percentage}%
-                  </span>
+                <div className="flex items-start justify-between gap-6">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[#E2E2E2] text-xs sm:text-sm break-all font-mono">
+                      {member.addr}
+                    </span>
+                  </div>
+                  <div className="flex-shrink-0 ml-4">
+                    <span className="text-[#E2E2E2] text-sm sm:text-base font-semibold">
+                      {member.percentage}%
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -322,7 +696,13 @@ const CreateNewGroup = () => {
         <div className="bg-[#FFFFFF0D] p-3 sm:p-4 rounded-sm border border-[#FFFFFF0D] mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-[#434672] to-[#755a5a] cursor-pointer rounded-full flex items-center justify-center">
-              <Checkbox className="!rounded-full h-4 w-4 sm:h-5 sm:w-5 cursor-pointer" />
+              <Checkbox
+                checked={isCheckboxChecked}
+                onCheckedChange={(checked) =>
+                  setIsCheckboxChecked(checked as boolean)
+                }
+                className="!rounded-full h-4 w-4 sm:h-5 sm:w-5 cursor-pointer"
+              />
             </span>
             <span className="text-[#E2E2E2] text-sm sm:text-base">
               By checking I accept the creation fee and confirm members and
@@ -332,19 +712,55 @@ const CreateNewGroup = () => {
         </div>
 
         {/* Create Group Button */}
-        <button className="w-full sm:w-fit cursor-pointer bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#E2E2E2] py-3 sm:py-4 px-6 sm:px-12 rounded-sm flex items-center justify-center gap-2 sm:gap-3 hover:bg-[#282e38] transition-colors">
-          <div className="flex items-center justify-center">
-            <Image
-              src={group4icon}
-              alt="icon"
-              className="h-5 w-5 sm:h-6 sm:w-6"
-            />
-          </div>
-          <span className="text-[#E2E2E2] text-base sm:text-lg font-semibold">
-            Create Group
-          </span>
+        <button
+          onClick={handleSubmit}
+          disabled={
+            totalPercentage !== 100 || isSubmitting || !isCheckboxChecked
+          }
+          className={`w-full sm:w-fit  bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#E2E2E2] py-3 sm:py-4 px-6 sm:px-12 rounded-sm flex items-center justify-center gap-2 sm:gap-3 transition-colors ${
+            totalPercentage !== 100 || isSubmitting || !isCheckboxChecked
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-[#282e38] cursor-pointer"
+          }`}
+        >
+          {isSubmitting ? (
+            <>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-[#E2E2E2] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[#E2E2E2] text-base sm:text-lg font-semibold">
+                Creating Group...
+              </span>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-center">
+                <Image
+                  src={group4icon}
+                  alt="icon"
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                />
+              </div>
+              <span className="text-[#E2E2E2] text-base sm:text-lg font-semibold">
+                Create Group
+              </span>
+            </>
+          )}
         </button>
       </div>
+
+      {/* Loading Overlay */}
+      {isSubmitting && <Loading />}
+
+      {isSuccess && (
+        <QRcode
+          groupAddress={groupAddress}
+          groupBalance={groupBalance}
+          isLoadingBalance={isLoadingBalance}
+          copySuccess={copySuccess}
+          copyToClipboard={copyToClipboard}
+          resetForm={resetForm}
+          closeModal={forceCloseModal}
+        />
+      )}
     </div>
   );
 };

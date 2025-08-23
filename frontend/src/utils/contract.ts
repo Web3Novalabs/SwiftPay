@@ -1,19 +1,19 @@
 import { Contract, Account, cairo, uint256, RpcProvider } from "starknet";
 import { SWIFTSWAP_ABI } from "../abi/swiftswap_abi";
+// import { useBalance } from "@starknet-react/core";
 
 // Contract configuration
 export const OLD_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-  export const CONTRACT_ADDRESS =
-    "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
-;
+export const CONTRACT_ADDRESS =
+  "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
 // export const CONTRACT_ADDRESS =
 //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
 // ;
 
-  export const myProvider = new RpcProvider({
-    nodeUrl: process.env.NEXT_PUBLIC_RPC_URL,
-  });
+export const myProvider = new RpcProvider({
+  nodeUrl: process.env.NEXT_PUBLIC_RPC_URL,
+});
 
 // Types
 export interface GroupMember {
@@ -109,7 +109,6 @@ export const createGroup = async (
 export const getGroup = async (
   account: Account,
   groupId: string
-  
 ): Promise<object> => {
   try {
     const contract = createContractInstance(account);
@@ -145,3 +144,10 @@ export const useContract = (account: Account | null) => {
     getGroup: getGroupWithContract,
   };
 };
+
+// Balance hook for contract interactions
+// export const { data: balance } = useBalance({
+//   token:
+//     "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d" as `0x${string}`,
+//   address: "0x0" as `0x${string}`,
+// });

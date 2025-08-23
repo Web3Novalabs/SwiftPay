@@ -36,6 +36,12 @@ const MainGroupLinksData = [
 ];
 
 const MainGroupLinks = () => {
+  const [activeLink, setActiveLink] = useState("/dashboard/create-new-group");
+
+  const handleLinkClick = (link: string) => {
+    setActiveLink(link);
+  };
+
   return (
     <div>
       <div className="mt-7">
@@ -49,12 +55,17 @@ const MainGroupLinks = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-10 pb-20 md:pb-16 px-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mx-auto items-center justify-center gap-4 sm:gap-5 mt-16 sm:mt-18 md:mt-10 pb-20 md:pb-16 px-4 sm:px-6 lg:px-0">
         {MainGroupLinksData.map((link, index) => (
           <Link
             href={link.link}
             key={index}
-            className="flex flex-col items-center cursor-pointer text-center justify-center border-gradient-flow p-4 sm:p-6 rounded-3xl hover:scale-105 transition-all w-full"
+            className={`flex flex-col items-center cursor-pointer text-center justify-center p-4 sm:p-6 rounded-3xl hover:scale-105 transition-all w-full min-h-[140px] sm:min-h-[160px] ${
+              link.link === activeLink
+                ? "border-gradient-flow"
+                : "border-gradient-flow-active"
+            }`}
+            onClick={() => handleLinkClick(link.link)}
           >
             <div className="mb-4">{link.icon}</div>
 
