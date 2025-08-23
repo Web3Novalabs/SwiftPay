@@ -6,20 +6,24 @@ import type { ApibaraRuntimeConfig } from "apibara/types";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
   const { startingBlock, streamUrl } = runtimeConfig["paymeshStarknet"];
+  const config = runtimeConfig.paymeshStarknet;
 
   const TRANSFER_SELECTOR = getSelector("Transfer");
   const GROUP_CREATED_SELECTOR = getSelector("GroupCreated");
 
-  let group_addresses: FieldElement[] = [];
+  const group_addresses = new Set<FieldElement>();
+  
+  let lastPaymentTime = 0;
+  const MIN_PAYMENT_INTERVAL = 100;
 
   return defineIndexer(StarknetStream)({
     streamUrl,
     finality: "accepted",
-    startingBlock: BigInt(1673184),
+    startingBlock: BigInt(startingBlock),
     filter: {
       events: [
         {
-          address: "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc",
+          address: config.contractAddress as `0x${string}`,
           keys: [GROUP_CREATED_SELECTOR],
         },
         {
@@ -34,49 +38,41 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
       const { events: blockEvents, header } = block;
       if (!header) return;
 
-      if (header && header.blockNumber !== undefined) {
-        logger.info(`Processing block number: ${header.blockNumber}`);
-      }
+      logger.info(`Processing block: ${header.blockNumber}`);
       
       for (const event of blockEvents) {
-        let eventKey = event.keys[0];
+        const eventKey = event.keys[0];
+        
         if (eventKey === GROUP_CREATED_SELECTOR) {
-            logger.info("✅ Processing GroupCreated event");
-            const groupAddress = event.keys[1];
-            logger.info(`🔍 Parsed GroupCreated event - group_address from keys[1]: ${groupAddress}`);
-            group_addresses.push(groupAddress);
-            logger.info(`Current group_addresses array: ${JSON.stringify(group_addresses)}`);
+          const groupAddress = event.keys[1];
+          group_addresses.add(groupAddress);
+          logger.info(`✅ GroupCreated: ${groupAddress} | Total groups: ${group_addresses.size}`);
         } 
         else if (eventKey === TRANSFER_SELECTOR) {
-          const [, to, , ] = event.data;
-          if (group_addresses.includes(to)) {
-              logger.info(`Current group_addresses array when transferring: ${JSON.stringify(group_addresses)}`);
-              pay({address: String(to)})
-
+          const [, to] = event.data;
+          if (group_addresses.has(to)) {
+            logger.info(`💰 Transfer to group: ${to}`);
+            
+            const now = Date.now();
+            if (now - lastPaymentTime >= MIN_PAYMENT_INTERVAL) {
+              pay(String(to));
+              lastPaymentTime = now;
+            } else {
+              logger.info(`⏳ Rate limiting payment to ${to}`);
+            }
           }
         }
       }
-
     },
   });
 }
 
-export const pay = async ({
-  address
-}: {
-  address: string;
-}) => {
-  console.log("pay function called");
+const pay = (address: string) => {
   fetch(`${process.env.API}/pay_member`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(
-      address
-    ),
-  }).then((success) => {
-    console.log("Payment made to ", address);
-    console.log("success: ", success);
+    body: JSON.stringify(address),
   }).catch((err) => {
-    console.log("An error occured ", err)
+    console.error(`Payment error for ${address}:`, err);
   });
 };

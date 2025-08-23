@@ -70,7 +70,7 @@ export default function QRcode({
 
           {/* QR Code */}
           <div className="mb-4 sm:mb-6">
-            <div className="inline-block p-2 sm:p-3 bg-[#0a1223af] border-2 border-[#434672d8] rounded-lg">
+            <div className="inline-block p-2 sm:p-3 bg-[#fffffffe] border-2 border-[#434672d8] rounded-lg">
               <QRCode
                 value={groupAddress}
                 size={160}

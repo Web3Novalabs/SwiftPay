@@ -295,6 +295,14 @@ const CreateNewGroup = () => {
     }));
   };
 
+  // Remove member
+  const removeMember = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.filter((_, i) => i !== index),
+    }));
+  };
+
   // Update member
   const updateMember = (
     index: number,
@@ -653,7 +661,9 @@ const CreateNewGroup = () => {
               <h3 className="text-[#8398AD] text-sm sm:text-base font-semibold">
                 Number of uses:
               </h3>
-              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">{formData.usage}</p>
+              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
+                {formData.usage}
+              </p>
             </div>
 
             <div className="flex items-center pt-3 sm:pt-5 justify-between">
