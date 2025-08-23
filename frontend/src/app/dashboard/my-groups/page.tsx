@@ -2,7 +2,6 @@
 import { Search, Users, Calendar, Plus, LucideUsers, Loader2 } from "lucide-react";
 import React, { useMemo, useEffect } from "react";
 import { Sofia_Sans } from "next/font/google";
-import { useContractFetch } from "@/hooks/useBlockchain";
 import { useAccount } from "@starknet-react/core";
 import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
 
@@ -61,30 +60,32 @@ const MyGroupsPage = () => {
 
   const { account, address } = useAccount();
 
-  const {
-    readData: groupSharesData,
-    readIsLoading: groupSharesLoading,
-    readError: groupSharesError,
-  } = useContractFetch(
-    SWIFTSWAP_ABI,
-    "group_address_has_shares_in",
-    address ? [address] : []
-  );
+  // const {
+  //   readData: groupSharesData,
+  //   readIsLoading: groupSharesLoading,
+  //   readError: groupSharesError,
+  // } = useContractFetch(
+  //   SWIFTSWAP_ABI,
+  //   "group_address_has_shares_in",
+  //   address ? [address] : []
+  // );
 
-  useEffect(() => {
-    if (account && groupSharesData) {
-      if (Array.isArray(groupSharesData)) {
-        groupSharesData.forEach((group, idx) => {
-          console.log(`Group #${idx}:`, group);
-        });
-      } else {
-        console.log("Group shares data:", groupSharesData);
-      }
-    }
-    if (groupSharesError) {
-      console.error("Error fetching group shares:", groupSharesError);
-    }
-  }, [account, groupSharesData, groupSharesError]);
+  // useEffect(() => {
+  //   if (account && groupSharesData) {
+  //     if (Array.isArray(groupSharesData)) {
+  //       groupSharesData.forEach((group, idx) => {
+  //         console.log(`Group #${idx}:`, group);
+  //       });
+  //     } else {
+  //       console.log("Group shares data:", groupSharesData);
+  //     }
+  //   }
+  //   if (groupSharesError) {
+  //     console.error("Error fetching group shares:", groupSharesError);
+  //   }
+  // }, [account, groupSharesData, groupSharesError]);
+
+  const groupSharesLoading = true;
   
   return (
     <div className="min-h-screen text-white p-6">

@@ -3,11 +3,7 @@ use crate::base::types::{Group, GroupMember};
 #[starknet::interface]
 pub trait IAutoShare<TContractState> {
     fn create_group(
-        ref self: TContractState,
-        name: ByteArray,
-        members: Array<GroupMember>,
-        token_address: ContractAddress,
-        usage_count: u256,
+        ref self: TContractState, name: ByteArray, members: Array<GroupMember>, usage_count: u256,
     ) -> ContractAddress;
 
     fn get_group(self: @TContractState, group_id: u256) -> Group;
@@ -57,5 +53,5 @@ pub trait IAutoShare<TContractState> {
     // fn execute_group_update(ref self: TContractState, group_id: u256);
     fn withdraw(ref self: TContractState);
     // fn get_group_update_requests(self: @TContractState) -> Array<GroupUpdateRequest>;
-    // fn get_group_update_request(self: @TContractState, group_id: u256) -> GroupUpdateRequest;
- }
+// fn get_group_update_request(self: @TContractState, group_id: u256) -> GroupUpdateRequest;
+}

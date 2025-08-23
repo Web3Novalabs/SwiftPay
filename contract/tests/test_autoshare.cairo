@@ -31,7 +31,7 @@ fn test_create_group_and_withdraw_success() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     let group_address = contract_address.get_group_address(1);
@@ -71,7 +71,7 @@ fn test_create_group_invalid_percentage() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 30 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -87,7 +87,7 @@ fn test_create_group_too_few_members() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -104,7 +104,7 @@ fn test_create_group_duplicate_address() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -125,7 +125,7 @@ fn test_top_subscription_success() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     let group_address = contract_address.get_group_address(1);
@@ -187,7 +187,7 @@ fn test_top_subscription_only_creator_or_member() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
     start_cheat_caller_address(contract_address.contract_address, USER3_ADDR());
     contract_address.top_subscription(1, 10);
@@ -209,7 +209,7 @@ fn test_top_subscription_invalid_usage_time() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     contract_address.top_subscription(1, 0);
@@ -228,7 +228,7 @@ fn test_get_group_success() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup1", members, token, 2);
+    contract_address.create_group("TestGroup1", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     let mut members = ArrayTrait::new();
@@ -245,7 +245,7 @@ fn test_get_group_success() {
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 20 });
     members.append(GroupMember { addr: USER3_ADDR(), percentage: 20 });
     start_cheat_caller_address(contract_address.contract_address, ADMIN_ADDR());
-    contract_address.create_group("TestGroup2", members, token, 2);
+    contract_address.create_group("TestGroup2", members, 2);
     // Should succeed for admin and
     let group1 = contract_address.get_group(1);
     stop_cheat_caller_address(contract_address.contract_address);
@@ -349,7 +349,7 @@ fn test_get_all_groups_and_get_groups_by_usage_limit_reached() {
     members1.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members1.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    contract_address.create_group("Group1", members1, token, 2);
+    contract_address.create_group("Group1", members1, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Group 2: usage_limit_reached = false (default)
@@ -357,7 +357,7 @@ fn test_get_all_groups_and_get_groups_by_usage_limit_reached() {
     members2.append(GroupMember { addr: USER2_ADDR(), percentage: 50 });
     members2.append(GroupMember { addr: USER3_ADDR(), percentage: 50 });
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    contract_address.create_group("Group2", members2, token, 2);
+    contract_address.create_group("Group2", members2, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Group 3: usage_limit_reached = false (default)
@@ -365,7 +365,7 @@ fn test_get_all_groups_and_get_groups_by_usage_limit_reached() {
     members3.append(GroupMember { addr: USER1_ADDR(), percentage: 10 });
     members3.append(GroupMember { addr: USER3_ADDR(), percentage: 90 });
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
-    contract_address.create_group("Group3", members3, token, 2);
+    contract_address.create_group("Group3", members3, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Test get_all_groups
@@ -439,7 +439,7 @@ fn test_pay_logic() {
         GroupMember { addr: USER2_ADDR(), percentage: 40 },
     ];
     // create the group - depreciated feature of amount 1000 will not be used with child contract
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
     let group_address = contract_address.get_group_address(1);
     // assert the balance is default 0
@@ -525,7 +525,7 @@ fn test_request_group_update_not_creator() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Try to request update as non-creator
@@ -554,7 +554,7 @@ fn test_request_group_update_invalid_percentage() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Try to request update with invalid percentage
@@ -583,7 +583,7 @@ fn test_request_group_update_duplicate_address() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Try to request update with duplicate addresses
@@ -615,7 +615,7 @@ fn test_request_group_update_success() {
     start_cheat_caller_address(contract_address.contract_address, USER3_ADDR());
     members.append(GroupMember { addr: USER1_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Try to request update as creator but not member (USER3 is creator but not in members list)
@@ -653,7 +653,7 @@ fn test_approve_group_update_success() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 65 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 35 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // request group update
@@ -714,7 +714,7 @@ fn test_execute_group_update_success() {
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 30 });
     members.append(GroupMember { addr: USER3_ADDR(), percentage: 10 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Request group update
@@ -766,7 +766,7 @@ fn test_execute_group_update_not_creator() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Request and approve update
@@ -807,7 +807,7 @@ fn test_execute_group_update_not_completed() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // Request update but don't approve
@@ -840,7 +840,7 @@ fn test_execute_group_update_no_pending_update() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
     // // Try to execute without any update request
 // start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
@@ -863,7 +863,7 @@ fn test_get_group_balance() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, token, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     let group_address = contract_address.get_group_address(1);
@@ -899,7 +899,7 @@ fn test_get_group_balance_after_pay_to_group_members() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     let group_address = contract_address.get_group_address(1);
@@ -995,7 +995,7 @@ fn test_new_impl_fee_collection() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // get group usage amount
@@ -1072,7 +1072,7 @@ fn test_new_impl_create_group_insufficient_strk_balance() {
     start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -1101,7 +1101,7 @@ fn test_new_impl_create_group_insufficient_allowance() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 2);
+    contract_address.create_group("TestGroup", members, 2);
     stop_cheat_caller_address(contract_address.contract_address);
 }
 
@@ -1130,7 +1130,7 @@ fn test_new_impl_pay_logic_should_panic_if_usage_limit_reached() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    contract_address.create_group("TestGroup", members, 1);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // send 1000 strk to the group
@@ -1168,7 +1168,7 @@ fn test_new_impl_pay_logic_should_panic_not_admin() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    contract_address.create_group("TestGroup", members, 1);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // send 1000 strk to the group
@@ -1198,7 +1198,7 @@ fn test_new_impl_pay_logic_should_panic_no_payment_made() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
     members.append(GroupMember { addr: CREATOR_ADDR(), percentage: 60 });
     members.append(GroupMember { addr: USER2_ADDR(), percentage: 40 });
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    contract_address.create_group("TestGroup", members, 1);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // // send 1000 strk to the group
@@ -1232,7 +1232,7 @@ fn test_top_subscription_function() {
         GroupMember { addr: USER2_ADDR(), percentage: 40 },
     ];
 
-    contract_address.create_group("TestGroup", members, erc20_dispatcher.contract_address, 1);
+    contract_address.create_group("TestGroup", members, 1);
     stop_cheat_caller_address(contract_address.contract_address);
     let group_address = contract_address.get_group_address(1);
 
