@@ -5,7 +5,8 @@ import { StarknetStream, getSelector, FieldElement } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
-  const { streamUrl } = runtimeConfig["paymeshStarknet"];
+  const { startingBlock, streamUrl } = runtimeConfig["paymeshStarknet"];
+  const config = runtimeConfig.paymeshStarknet;
 
   const TRANSFER_SELECTOR = getSelector("Transfer");
   const GROUP_CREATED_SELECTOR = getSelector("GroupCreated");
@@ -18,11 +19,11 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
     streamUrl,
     finality: "accepted",
-    startingBlock: BigInt(1674497),
+    startingBlock: BigInt(startingBlock),
     filter: {
       events: [
         {
-          address: "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc",
+          address: config.contractAddress as `0x${string}`,
           keys: [GROUP_CREATED_SELECTOR],
         },
         {
