@@ -25,9 +25,8 @@ pub async fn new() -> (StatusCode, Json<&'static str>) {
 pub async fn pay(
     Json(address): Json<String>,
 ) -> Result<(StatusCode, Json<String>), (StatusCode, Json<Response>)> {
-    // let account = signer_account();
-    // let contract_address = contract_address_felt();
-    // println!("this address is: {}", contract_address);
+    let account = signer_account();
+    let contract_address = contract_address_felt();
 
     // if !is_valid_address(address.as_str()) {
     //     let err = format!("INVALID ADDRESS");
