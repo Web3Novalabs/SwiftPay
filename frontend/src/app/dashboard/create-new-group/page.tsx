@@ -121,9 +121,13 @@ const CreateNewGroup = () => {
     console.log(m);
   }, [data, error, hasProcessedTransaction]);
 
-  const { readData: usageFee } = useContractFetch(PAYMESH_ABI, "get_group_usage_fee", []) 
-  
-  console.log(usageFee)
+  const { readData: usageFee } = useContractFetch(
+    PAYMESH_ABI,
+    "get_group_usage_fee",
+    []
+  );
+
+  console.log(usageFee);
   // Reset success state when component unmounts or when navigating away
   useEffect(() => {
     return () => {
@@ -648,7 +652,9 @@ const CreateNewGroup = () => {
               <h3 className="text-[#8398AD] text-sm sm:text-base font-semibold">
                 Number of uses:
               </h3>
-              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">{formData.usage}</p>
+              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
+                {formData.usage}
+              </p>
             </div>
 
             <div className="flex items-center pt-3 sm:pt-5 justify-between">
