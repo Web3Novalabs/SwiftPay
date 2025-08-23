@@ -13,6 +13,15 @@ import { useAccount } from "@starknet-react/core";
 import { useRouter } from "next/navigation";
 import { GroupSummary } from "@/types/group";
 import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 // import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
 
 const sofiaSans = Sofia_Sans({
@@ -109,14 +118,34 @@ const MyGroupsPage = () => {
 
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative">
-          <select
-            className="bg-none border border-gray-600 px-4 py-3 pr-10 text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-            defaultValue="all"
-          >
-            <option value="all">All</option>
-            <option value="cleared">Cleared</option>
-            <option value="pending">Pending</option>
-          </select>
+          <Select>
+            <SelectTrigger className="w-full bg-[#FFFFFF0D] border py-4 sm:py-6 px-3 sm:px-4 rounded-sm border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1F2937] border border-[#FFFFFF0D] w-full">
+              <SelectGroup>
+                <SelectLabel className="text-[#E2E2E2]">Tokens</SelectLabel>
+                <SelectItem
+                  value="strk"
+                  className="text-[#8398AD] hover:bg-[#374151]"
+                >
+                  ALL
+                </SelectItem>
+                <SelectItem
+                  value="eth"
+                  className="text-[#8398AD] hover:bg-[#374151]"
+                >
+                  PENDING
+                </SelectItem>
+                <SelectItem
+                  value="usdc"
+                  className="text-[#8398AD] hover:bg-[#374151]"
+                >
+                  CLEARED
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="relative flex-1">
@@ -124,13 +153,13 @@ const MyGroupsPage = () => {
           <input
             type="text"
             placeholder="Search group by name.."
-            className=" bg-none border border-gray-600 pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+            className=" bg-none border rounded-sm border-gray-600 pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
           />
         </div>
       </div>
 
       <div className="flex flex-col w-fit h-fit sm:flex-row gap-6 mb-8">
-        <div className="bg-[#2A2D35] px-6 py-3 flex items-center gap-4">
+        <div className="bg-[#2A2D35] rounded-sm px-6 py-3 flex items-center gap-4">
           <LucideUsers className="w-6 h-6 text-white" />
           <div>
             {groupSharesLoading ? (
@@ -146,7 +175,7 @@ const MyGroupsPage = () => {
           </div>
         </div>
 
-        <div className="bg-[#2A2D35] px-6 flex items-center gap-4">
+        <div className="bg-[#2A2D35] rounded-sm px-6 flex items-center gap-4">
           <Plus className="w-6 h-6 text-white" />
           <div>
             {groupSharesLoading ? (
@@ -169,7 +198,7 @@ const MyGroupsPage = () => {
         {mockGroups.map((group) => (
           <div
             key={group.id}
-            className="bg-[#2A2D35] border-none text-sm p-6 hover:border-gray-800 transition-colors"
+            className="bg-[#2A2D35] rounded-sm border-none text-sm p-6 hover:border-gray-800 transition-colors"
           >
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold text-white">{group.name}</h3>
@@ -202,7 +231,7 @@ const MyGroupsPage = () => {
 
               <Link
                 href={`/dashboard/my-groups/${group.id}`}
-                className="text-white border border-gray-800 rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-3 hover:bg-[#5a5a5a] transition-colors cursor-pointer"
+                className="text-white border-gradient-flow rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-3 hover:bg-[#5a5a5a] transition-colors cursor-pointer"
               >
                 View Group
               </Link>

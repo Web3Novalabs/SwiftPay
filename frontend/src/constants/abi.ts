@@ -1,7 +1,7 @@
 // export const OLD_CONTRACT_ADDRESS =
 //   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
 export const SWIFTPAY_CONTRACT_ADDRESS =
-  "0x03eb5cc3d473d59331c48096cafa360d52b49fcd6a08b14a6811223c773a2d73";
+  "0x06e7eb4c36900a090acca8a71c9a2ee861cf0cb69be98a812f0a85b13a18a7d2";
 
 export const STRK_SEPOLIA =
   "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
@@ -9,4 +9,4 @@ export const USDC_SEPOLIA =
   "0x53b40a647cedfca6ca84f542a0fe36736031905a9639a7f19a3c1e66bfd5080";
 export const ETH_SEPOLIA =
   "0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
-  // get_all_groups;
+// get_all_groups;

@@ -6,15 +6,26 @@ import {
   Users,
   Calendar,
   X,
-  Edit3,
-  DollarSign,
   Copy,
   Check,
   ArrowLeft,
+  LucideUsers,
+  Plus,
+  Search,
+  ListPlus,
 } from "lucide-react";
 import { Sofia_Sans } from "next/font/google";
 import { Group } from "@/types/group";
 import { GroupService } from "@/services/groupService";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+} from "@/components/ui/select";
 
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
@@ -189,12 +200,81 @@ const GroupDetailsPage = () => {
   }
 
   return (
-    <div className="min-h-screen text-white p-4 sm:p-6">
+    <div className="min-h-screen text-white mb-24">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">My groups</h1>
+        <p className="text-gray-300 text-lg">
+          Filter between all, cleared and pending
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="relative">
+          <Select>
+            <SelectTrigger className="w-full bg-[#FFFFFF0D] border py-4 sm:py-6 px-3 sm:px-4 rounded-sm border-[#FFFFFF0D] text-[#8398AD] !text-sm sm:!text-base">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1F2937] border border-[#FFFFFF0D] w-full">
+              <SelectGroup>
+                <SelectLabel className="text-[#E2E2E2]">Tokens</SelectLabel>
+                <SelectItem
+                  value="strk"
+                  className="text-[#8398AD] hover:bg-[#374151]"
+                >
+                  ALL
+                </SelectItem>
+                <SelectItem
+                  value="eth"
+                  className="text-[#8398AD] hover:bg-[#374151]"
+                >
+                  CLEARED
+                </SelectItem>
+                <SelectItem
+                  value="usdc"
+                  className="text-[#8398AD] hover:bg-[#374151]"
+                >
+                  PENDING
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search group by name.."
+            className=" bg-none border rounded-sm border-gray-600 pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col w-fit h-fit sm:flex-row gap-6 mb-8">
+        <div className="bg-[#2A2D35] rounded-sm px-6 py-3 flex items-center gap-2">
+          <LucideUsers className="w-6 h-6 text-white" />
+          <div>
+            <p className="text-gray-300">
+              Total Groups - <b className="text-white">4</b>{" "}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-[#2A2D35] rounded-sm px-6 flex items-center gap-2">
+          <ListPlus className="w-6 h-6 text-white" />
+          <div>
+            <p className="text-gray-300">
+              Groups Created - <b className="text-white">2</b>{" "}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={handleBackToGroups}
-          className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+          className="flex items-center gap-2 cursor-pointer text-gray-300 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="hidden sm:inline">Back to Groups</span>
@@ -204,16 +284,53 @@ const GroupDetailsPage = () => {
       </div>
 
       {/* Members Table */}
-      <div className="bg-[#FFFFFF0D] rounded-sm overflow-hidden">
-        {/* Desktop Table */}
+      <div className="bg-[#ffffff0d] rounded-sm overflow-hidden">
         <div className="hidden lg:block overflow-x-auto">
-          <div className="flex items-center justify-between p-4 border-b border-gray-600">
+          <div className="flex items-center justify-between p-4 border-b border-[#20232bac]">
             <div className="flex items-center gap-2">
-              <h1>{groupData.name}</h1>
-              <span className=""></span>
+              <h1 className="border-r pr-2 border-[#FFFFFF0D]">
+                {groupData.name}
+              </h1>
               <h3 className="text-[#379A83]">Subscription Usage: 1/2</h3>
             </div>
             <X className="w-5 h-5" />
+          </div>
+
+          <div className="flex items-center justify-between p-4 border-b border-[#20232bb6]">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h1 className="border-r pr-2 border-[#FFFFFF0D] text-[#8398AD] flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Members
+                </h1>
+                <h3 className="text-[#E2E2E2]">5</h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <h1 className="border-r pr-2 border-[#FFFFFF0D] text-[#8398AD] flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Date Created
+                </h1>
+                <h3 className="text-[#E2E2E2]">29th - 08 - 2025</h3>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button className="border-gradient-flow cursor-pointer text-white px-4 py-2 rounded-sm transition-colors">
+                Edit Group
+              </button>
+              <button className="border-gradient-flow cursor-pointer text-white px-4 py-2 rounded-sm transition-colors">
+                Split Funds
+              </button>
+              <div className="border-gradient-flow space-x-2.5 text-white px-4 py-2 rounded-sm transition-colors">
+                <span className="text-[#8398AD]">Balance:</span>
+                <span className="text-[#E2E2E2]">0.000 STRK</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <h1>Members</h1>
           </div>
 
           <table className="w-full">
@@ -226,19 +343,7 @@ const GroupDetailsPage = () => {
                   Beneficiary Address
                 </th>
                 <th className="text-left p-4 text-gray-300 text-sm font-medium">
-                  Type
-                </th>
-                <th className="text-left p-4 text-gray-300 text-sm font-medium">
                   Percentage
-                </th>
-                <th className="text-left p-4 text-gray-300 text-sm font-medium">
-                  Amount
-                </th>
-                <th className="text-left p-4 text-gray-300 text-sm font-medium">
-                  Date
-                </th>
-                <th className="text-left p-4 text-gray-300 text-sm font-medium">
-                  Status
                 </th>
               </tr>
             </thead>
@@ -267,28 +372,8 @@ const GroupDetailsPage = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="p-4">
-                    <span className="px-2 py-1 bg-[#103E3A] text-[#00E69D] text-xs rounded">
-                      {member.type}
-                    </span>
-                  </td>
                   <td className="p-4 text-white text-sm">
                     {member.percentage}%
-                  </td>
-                  <td className="p-4 text-white text-sm font-semibold">
-                    {member.amount}
-                  </td>
-                  <td className="p-4 text-gray-300 text-sm">{member.date}</td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
-                        member.status === "Paid"
-                          ? "bg-[#103E3A] text-[#00E69D]"
-                          : "bg-[#3A103E] text-[#E69D00]"
-                      }`}
-                    >
-                      {member.status}
-                    </span>
                   </td>
                 </tr>
               ))}
