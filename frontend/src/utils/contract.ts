@@ -1,11 +1,11 @@
 import { Contract, Account, cairo, uint256, RpcProvider } from "starknet";
-import { SWIFTSWAP_ABI } from "../abi/swiftswap_abi";
+import { PAYMESH_ABI } from "../abi/swiftswap_abi";
 // import { useBalance } from "@starknet-react/core";
 
 // Contract configuration
 export const OLD_CONTRACT_ADDRESS =
   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-export const CONTRACT_ADDRESS =
+export const PAYMESH_ADDRESS =
   "0x02cc3107900daff156c0888eccbcd901500f9bf440ab694e1eecc14f4641d1dc";
 // export const CONTRACT_ADDRESS =
 //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
@@ -68,7 +68,7 @@ export const formatGroupMembers = (members: GroupMember[]) => {
 
 // Contract interaction functions
 export const createContractInstance = (account: Account): Contract => {
-  return new Contract(SWIFTSWAP_ABI, CONTRACT_ADDRESS, account);
+  return new Contract(PAYMESH_ABI, PAYMESH_ADDRESS, account);
 };
 
 export const createGroup = async (

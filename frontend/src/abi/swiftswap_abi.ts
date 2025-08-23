@@ -1,6 +1,6 @@
 import { Abi } from "starknet";
 
-export const SWIFTSWAP_ABI: Abi = [
+export const PAYMESH_ABI: Abi = [
   {
     type: "impl",
     name: "autoshare",

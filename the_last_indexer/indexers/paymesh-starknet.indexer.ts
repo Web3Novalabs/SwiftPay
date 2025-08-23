@@ -15,7 +15,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
     streamUrl,
     finality: "accepted",
-    startingBlock: BigInt(1625628),
+    startingBlock: BigInt(1673184),
     filter: {
       events: [
         {
@@ -67,7 +67,7 @@ export const pay = async ({
   address: string;
 }) => {
   console.log("pay function called");
-  fetch("http://localhost:8080/pay_member", {
+  fetch(`${process.env.API}/pay_member`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(

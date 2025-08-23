@@ -14,7 +14,7 @@ import {
 import { sepolia } from "@starknet-react/chains";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 // import { SWIFTPAY_CONTRACT_ADDRESS, writeContractWithStarknetJs } from "@/hooks/useBlockchain";
-import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
+// import { PAYMESH_ABI_ABI } from "@/abi/swiftswap_abi";
 import {
   byteArray,
   cairo,
@@ -61,6 +61,17 @@ export default function CreateGroupForm() {
   const { address, account } = useAccount();
   const { chain } = useNetwork();
 
+  const formMembers: GroupMember[] = [
+    {
+      addr: "0x05a99911249cD55eF49B196E0f380AC086C6f3b2459adb8E9A33Ae8610e1C7Ed",
+      percentage: 20,
+    },
+    {
+      addr: "0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a",
+      percentage: 80,
+    },
+  ];
+
   const { createGroup, isCreatingGroup } = useContractInteraction();
 
   const [formData, setFormData] = useState<CreateGroupFormData>({
@@ -105,6 +116,25 @@ export default function CreateGroupForm() {
   const { data, error } = useTransactionReceipt({
     hash: resultHash,
   });
+
+  const create_group = async () => {
+    if (!account) {
+      console.error("Account is undefined");
+      return;
+    }
+    await account.execute({
+      contractAddress:
+        "0x05aff3ec87038c50ccbab5d83485a8a7adb9c1b92ecdd61af6c2e72b778ce823",
+      entrypoint: "create_group",
+      calldata: CallData.compile({
+        name: byteArray.byteArrayFromString("hello"),
+        members: formMembers,
+        token_address:
+          "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+        usage_count: cairo.uint256(1),
+      }),
+    });
+  };
 
   // Fetch group balance
   const fetchGroupBalance = async (groupAddr: string) => {
@@ -701,6 +731,7 @@ export default function CreateGroupForm() {
               </button>
             </div>
           </form>
+          <button onClick={create_group}>create</button>
         </>
       )}
     </div>

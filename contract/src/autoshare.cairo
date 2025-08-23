@@ -182,7 +182,6 @@ pub mod AutoShare {
             ref self: ContractState,
             name: ByteArray,
             members: Array<GroupMember>,
-            token_address: ContractAddress,
             usage_count: u256,
         ) -> ContractAddress {
             assert(get_caller_address() != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
@@ -231,7 +230,7 @@ pub mod AutoShare {
                 group,
                 self.emergency_withdraw_address.read(),
                 members,
-                token_address,
+                self.token_address.read(),
                 self.ownable.owner(),
             )
                 .serialize(ref constructor_calldata);
