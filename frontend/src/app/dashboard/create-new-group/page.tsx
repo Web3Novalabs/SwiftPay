@@ -277,6 +277,14 @@ const CreateNewGroup = () => {
     }));
   };
 
+  // Remove member
+  const removeMember = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.filter((_, i) => i !== index),
+    }));
+  };
+
   // Update member
   const updateMember = (
     index: number,
@@ -516,7 +524,10 @@ const CreateNewGroup = () => {
                   />
                 </div>
 
-                <div className="w-fit h-full mt-2 cursor-pointer bg-[#403E3E] border border-[#FFFFFF0D] rounded-sm p-3 hover:bg-[#755A5A] transition-all duration-300">
+                <div
+                  onClick={() => removeMember(index)}
+                  className="w-fit h-full mt-2 cursor-pointer bg-[#403E3E] border border-[#FFFFFF0D] rounded-sm p-3 hover:bg-[#755A5A] transition-all duration-300"
+                >
                   <Trash2 className="w-6 h-6 text-[#E2E2E2]" />
                 </div>
               </div>
