@@ -10,5 +10,4 @@ services:
     environment:
       - DNA_TOKEN="${DNA_TOKEN}"
       - API="${API}"
-    networks:
-      - paymesh-network
+
