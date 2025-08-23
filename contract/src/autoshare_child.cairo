@@ -64,7 +64,6 @@ pub mod AutoshareChild {
         fn get_details_of_child(
             self: @ContractState,
         ) -> (u256, Group, Array<GroupMember>, u256, u64) {
-            self.assert_only_admin();
             let contract_address = get_contract_address();
 
             let id = self.id.read();
@@ -109,6 +108,7 @@ pub mod AutoshareChild {
             let caller = get_caller_address();
             assert(self.admin.read() == caller, 'Only admin allowed');
         }
+
         fn assert_main_contract_set(self: @ContractState) {
             assert(self.main_contract_address.read().is_non_zero(), 'Main contract not set');
         }

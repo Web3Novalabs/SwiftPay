@@ -3,8 +3,15 @@ pub mod AutoShare {
     use core::array::ArrayTrait;
     use core::byte_array::ByteArray;
     use core::num::traits::Zero;
+    use openzeppelin::access::accesscontrol::AccessControlComponent;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::introspection::src5::SRC5Component;
+
+    // oz import
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin::upgrades::UpgradeableComponent;
+
+    const ADMIN_ROLE: felt252 = selector!("ADMIN");
     use starknet::storage::{
         Map, MutableVecTrait, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry,
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait,
@@ -33,20 +40,41 @@ pub mod AutoShare {
 
     // components definition
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: AccessControlComponent, storage: accesscontrol, event: AccessControlEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
-    // Upgradeable
+    // components impl
     impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
+    impl InternalImpl = OwnableComponent::InternalImpl<ContractState>;
+    // AccessControl
+    #[abi(embed_v0)]
+    impl AccessControlImpl =
+        AccessControlComponent::AccessControlImpl<ContractState>;
+    impl AccessControlInternalImpl = AccessControlComponent::InternalImpl<ContractState>;
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
 
     #[storage]
     pub struct Storage {
         groups: Map<u256, Group>,
         group_members: Map<u256, Vec<GroupMember>>,
         group_count: u256,
-        admin: ContractAddress,
         group_usage_fee: u256,
         group_update_fee: u256,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        accesscontrol: AccessControlComponent::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
         token_address: ContractAddress,
         // Group update storage
         update_request_count: u256,
@@ -80,6 +108,12 @@ pub mod AutoShare {
         GroupUpdated: GroupUpdated,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        AccessControlEvent: AccessControlComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
         GroupPaid: GroupPaid,
         SubscriptionTopped: SubscriptionTopped,
     }
@@ -87,13 +121,17 @@ pub mod AutoShare {
     #[constructor]
     pub fn constructor(
         ref self: ContractState,
-        admin: ContractAddress,
+        owner: ContractAddress,
         token_address: ContractAddress,
         emergency_withdraw_address: ContractAddress,
         child_contract_class_hash: ClassHash,
     ) {
-        assert(admin != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
-        self.admin.write(admin);
+        assert(owner != contract_address_const::<0>(), ERROR_ZERO_ADDRESS);
+        // initialize owner of contract
+        self.ownable.initializer(owner);
+        self.accesscontrol.initializer();
+        self.accesscontrol._grant_role(ADMIN_ROLE, owner);
+
         self.group_count.write(0);
         self.update_request_count.write(0);
         self.token_address.write(token_address);
@@ -105,19 +143,15 @@ pub mod AutoShare {
 
     #[generate_trait]
     impl SecurityImpl of SecurityTrait {
-        fn assert_only_admin(self: @ContractState) {
-            let caller = get_caller_address();
-
-            assert(self.admin.read() == caller, 'Only admin allowed');
-        }
-
         fn is_admin_or_creator(self: @ContractState, group: Group) {
             let caller = get_caller_address();
-            let permission = caller == self.admin.read() || caller == group.creator;
+
+            let is_admin = self.accesscontrol.has_role(ADMIN_ROLE, caller);
+            let is_creator = caller == group.creator;
+            let permission = is_admin || is_creator;
             assert(permission, 'only owner or admin');
         }
 
-        // Asserts that creator meets group creation fee requirements
         fn assert_group_creation_fee_requirements(
             self: @ContractState,
             token: IERC20Dispatcher,
@@ -198,7 +232,7 @@ pub mod AutoShare {
                 self.emergency_withdraw_address.read(),
                 members,
                 token_address,
-                self.admin.read(),
+                self.ownable.owner(),
             )
                 .serialize(ref constructor_calldata);
 
@@ -281,7 +315,7 @@ pub mod AutoShare {
         }
 
         fn set_group_usage_fee(ref self: ContractState, group_usage_fee: u256) {
-            self.assert_only_admin();
+            self.accesscontrol.assert_only_role(ADMIN_ROLE);
             self.group_usage_fee.write(group_usage_fee);
         }
 
@@ -290,7 +324,7 @@ pub mod AutoShare {
         }
 
         fn set_group_update_fee(ref self: ContractState, group_update_fee: u256) {
-            self.assert_only_admin();
+            self.accesscontrol.assert_only_role(ADMIN_ROLE);
             self.group_update_fee.write(group_update_fee);
         }
 
@@ -370,7 +404,7 @@ pub mod AutoShare {
         }
 
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
-            self.assert_only_admin();
+            self.accesscontrol.assert_only_role(ADMIN_ROLE);
 
             assert(new_class_hash.is_non_zero(), 'Class hash cannot be zero');
 
@@ -382,7 +416,9 @@ pub mod AutoShare {
             let mut group: Group = self.get_group(group_id);
             let caller = get_caller_address();
             let is_member = self.is_group_member(group_id, caller);
-            let caller = is_member || caller == group.creator || self.admin.read() == caller;
+            let caller = is_member
+                || caller == group.creator
+                || self.accesscontrol.has_role(ADMIN_ROLE, caller);
             assert(caller, 'not creator, member or admin');
             let mut usage_count = self.usage_count.read(group_id);
             assert(
@@ -499,10 +535,12 @@ pub mod AutoShare {
 
         fn withdraw(ref self: ContractState) {
             let current_caller = get_caller_address();
-            let caller = current_caller == self.admin.read()
-                || current_caller == self.emergency_withdraw_address.read();
+            let is_admin = self.accesscontrol.has_role(ADMIN_ROLE, current_caller);
+            let emergency_address = self.emergency_withdraw_address.read();
 
-            assert(caller, 'caller not admin or EMG admin');
+            assert(
+                current_caller == emergency_address || is_admin, 'caller not admin or EMG admin',
+            );
             let contract_address = get_contract_address();
 
             // check contract balance
@@ -515,20 +553,6 @@ pub mod AutoShare {
 
     #[generate_trait]
     impl internal of InternalTrait {
-        fn _process_payment(
-            ref self: ContractState,
-            amount: u256,
-            addr_from: ContractAddress,
-            addr_to: ContractAddress,
-        ) {
-            let token = IERC20Dispatcher { contract_address: self.token_address.read() };
-            let caller = get_caller_address();
-            let contract_address = get_contract_address();
-            self._check_token_allowance(caller, amount);
-            self._check_token_balance(caller, amount);
-            token.transfer_from(addr_from, addr_to, amount);
-        }
-
         /// Returns true if the address is found among the group members, false otherwise.
         fn is_group_member(
             ref self: ContractState, group_id: u256, member_addr: ContractAddress,

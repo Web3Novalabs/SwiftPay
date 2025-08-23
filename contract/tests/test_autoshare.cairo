@@ -955,7 +955,7 @@ fn test_set_group_usage_fee() {
 }
 
 #[test]
-#[should_panic(expected: ('Only admin allowed',))]
+#[should_panic(expected: ('Caller is missing role',))]
 fn test_set_group_usage_fee_error() {
     let (contract_address, _) = deploy_autoshare_contract();
     start_cheat_caller_address(contract_address.contract_address, EMERGENCY_WITHDRAW_ADDR());

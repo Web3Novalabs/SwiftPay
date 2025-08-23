@@ -7,6 +7,29 @@ import { useAccount, useNetwork } from "@starknet-react/core";
 import { sepolia } from "@starknet-react/chains";
 
 export default function Home() {
+  async function Fetch() {
+    const req = await fetch("http://0.0.0.0:8080/");
+    console.log(req)
+    const response = await req.json();
+    console.log(response)
+  }
+  
+  function post() {
+    fetch("http://68.183.139.104:8080/pay_member", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        "0x02ee4892cf574a6db0307d49b502db2882c288dc02a1166fdec2ba754a663592"
+      ),
+    })
+      .then((success) => {
+        console.log("Payment made to ", "address");
+        console.log("success: ", success);
+      })
+      .catch((err) => {
+        console.log("An error occured ", err);
+      });
+  }
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header with Wallet Connection */}
@@ -20,6 +43,7 @@ export default function Home() {
               <UserBalance />
               <WalletConnect />
             </div>
+            <button onClick={post}  className="p-6 bg-gray-500 rounded-xl">test fetch</button>
           </div>
         </div>
       </header>
