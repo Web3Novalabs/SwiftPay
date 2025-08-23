@@ -67,7 +67,7 @@ export const pay = async ({
   address: string;
 }) => {
   console.log("pay function called");
-  fetch("http://localhost:8080/pay_member", {
+  fetch(`${process.env.API}/pay_member`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(
