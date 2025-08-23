@@ -1,12 +1,13 @@
 import { useAccount, useContract, useReadContract } from "@starknet-react/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreateGroupData, PAYMESH_ADDRESS } from "../utils/contract";
 import { Abi } from "starknet";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 
 export function useContractFetch(
   abi: Abi,
   functionName: string,
-  args: []
+  args: [string | number]
 ) {
   const {
     data: readData,
@@ -111,3 +112,56 @@ export const useContractInteraction = () => {
     account,
   };
 };
+
+// export function useGetAllGroups() {
+//   const [transaction, setTransaction] = useState();
+//   const { readData: groupList } = useContractFetch(
+//     PAYMESH_ABI,
+//     "get_all_groups",
+//     [0]
+//   );
+
+//   useEffect(() => {
+//     if (!groupList) return;
+//     let groupData = [];
+//     groupList.map((data) => {
+//       groupData.push({
+//         creator: `0x0${data.creator.toString(16)}`,
+//         date: data.date ? epocTime(data.date.toString(16)) : "",
+//         name: data.name,
+//         id: `0x0${data.id.toString(16)}`,
+//         usage_limit_reached: data.usage_limit_reached,
+//         groupAddress: `0x0${data["group_address"].toString(16)}`,
+//       });
+//     });
+//     setTransaction(groupData);
+//   }, [groupList]);
+
+//   return transaction;
+// }
+
+/// list of group an address has shares in
+
+// members in a group
+// export function useGroupMember(id) {
+//   const [groupMember, setGroupMember] = useState();
+//   const { readData: member } = useContractFetch(
+//     PAYMESH_ABI,
+//     "get_group_member",
+//     [id]
+//   );
+//   useEffect(() => {
+//     if (!member) return;
+//     let membersData = [];
+//     member.map((data) => {
+//       console.log(data);
+//       membersData.push({
+//         addr: `0x0${data.addr.toString(16)}`,
+//         percentage: Number(data.percentage),
+//       });
+//     });
+//     setGroupMember(membersData);
+//   }, [member]);
+
+//   return groupMember;
+// }

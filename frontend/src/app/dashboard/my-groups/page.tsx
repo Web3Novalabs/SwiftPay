@@ -1,8 +1,10 @@
 "use client"
 import { Search, Users, Calendar, Plus, LucideUsers, Loader2 } from "lucide-react";
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Sofia_Sans } from "next/font/google";
 import { useAccount } from "@starknet-react/core";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
+import { useContractFetch, useHasSharesIn } from "@/hooks/useContractInteraction";
 // import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
 
 const sofiaSans = Sofia_Sans({
@@ -56,9 +58,36 @@ const mockGroups = [
 
 const MyGroupsPage = () => {
   const totalGroups = mockGroups.length;
-  const groupsCreated = mockGroups.filter(group => group.isCreator).length;
-
+  const groupsCreated = mockGroups.filter((group) => group.isCreator).length;
   const { account, address } = useAccount();
+
+  const [transaction, setTransaction] = useState();
+
+  /// list of group an address has shares in
+  const { readData: groupList } = useContractFetch(
+    PAYMESH_ABI,
+    "group_address_has_shares_in",
+    ["0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a"]
+  );
+  console.log(groupList);
+
+  // useEffect(() => {
+  //   if (!groupList) return;
+  //   let groupData = [];
+  //   groupList.map((data) => {
+  //     groupData.push({
+  //       creator: `0x0${data.creator.toString(16)}`,
+  //       date: data.date ? epocTime(data.date.toString(16)) : "",
+  //       name: data.name,
+  //       id: `0x0${data.id.toString(16)}`,
+  //       usage_limit_reached: data.usage_limit_reached,
+  //       groupAddress: `0x0${data["group_address"].toString(16)}`,
+  //     });
+  //   });
+  //   setTransaction(groupData);
+  // }, [transaction]);
+
+  // console.log(transaction);
 
   // const {
   //   readData: groupSharesData,
@@ -86,17 +115,19 @@ const MyGroupsPage = () => {
   // }, [account, groupSharesData, groupSharesError]);
 
   const groupSharesLoading = true;
-  
+
   return (
     <div className="min-h-screen text-white p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">My groups</h1>
-        <p className="text-gray-300 text-lg">Filter between all, cleared and pending</p>
+        <p className="text-gray-300 text-lg">
+          Filter between all, cleared and pending
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative">
-          <select 
+          <select
             className="bg-none border border-gray-600 px-4 py-3 pr-10 text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
             defaultValue="all"
           >
@@ -105,11 +136,11 @@ const MyGroupsPage = () => {
             <option value="pending">Pending</option>
           </select>
         </div>
-        
+
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search group by name.."
             className=" bg-none border border-gray-600 pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
           />
@@ -126,7 +157,9 @@ const MyGroupsPage = () => {
                 <p className="text-gray-300">Loading...</p>
               </div>
             ) : (
-              <p className="text-gray-300">Total Groups - <b className="text-white">{totalGroups}</b> </p>
+              <p className="text-gray-300">
+                Total Groups - <b className="text-white">{totalGroups}</b>{" "}
+              </p>
             )}
           </div>
         </div>
@@ -140,16 +173,23 @@ const MyGroupsPage = () => {
                 <p className="text-gray-300">Loading...</p>
               </div>
             ) : (
-              <p className="text-gray-300">Groups Created - <b className="text-white">{groupsCreated}</b> </p>
+              <p className="text-gray-300">
+                Groups Created - <b className="text-white">{groupsCreated}</b>{" "}
+              </p>
             )}
           </div>
         </div>
       </div>
 
       {groupSharesLoading ? (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}>
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}
+        >
           {[1, 2, 3, 4, 5, 6].map((index) => (
-            <div key={index} className="bg-[#2A2D35] border-none text-sm p-6 animate-pulse">
+            <div
+              key={index}
+              className="bg-[#2A2D35] border-none text-sm p-6 animate-pulse"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="h-6 bg-gray-600 rounded w-32"></div>
                 <div className="h-6 bg-gray-600 rounded w-20"></div>
@@ -171,16 +211,25 @@ const MyGroupsPage = () => {
           ))}
         </div>
       ) : (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}>
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}
+        >
           {mockGroups.map((group) => (
-            <div key={group.id} className="bg-[#2A2D35] border-none text-sm p-6 hover:border-gray-800 transition-colors">
+            <div
+              key={group.id}
+              className="bg-[#2A2D35] border-none text-sm p-6 hover:border-gray-800 transition-colors"
+            >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold text-white">{group.name}</h3>
-                <span className={`px-3 py-1 text-sm rounded-sm font-medium ${
-                  group.isCreator 
-                    ? 'bg-[#10273E] text-[#0073E6]' 
-                    : 'bg-[#103E3A] text-[#00E69D]'
-                }`}>
+                <h3 className="text-xl font-semibold text-white">
+                  {group.name}
+                </h3>
+                <span
+                  className={`px-3 py-1 text-sm rounded-sm font-medium ${
+                    group.isCreator
+                      ? "bg-[#10273E] text-[#0073E6]"
+                      : "bg-[#103E3A] text-[#00E69D]"
+                  }`}
+                >
                   {group.role}
                 </span>
               </div>
@@ -188,14 +237,19 @@ const MyGroupsPage = () => {
                 <div className="space-y-3 mb-6 text-[12px]">
                   <div className="flex items-center gap-3 text-gray-300">
                     <Users className="w-4 h-4" />
-                    <span>Members | <b className="text-white"> {group.members} </b> </span>
+                    <span>
+                      Members | <b className="text-white"> {group.members} </b>{" "}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 text-gray-300">
                     <Calendar className="w-4 h-4" />
-                    <span>Date Created | <b className="text-white"> {group.dateCreated} </b> </span>
+                    <span>
+                      Date Created |{" "}
+                      <b className="text-white"> {group.dateCreated} </b>{" "}
+                    </span>
                   </div>
                 </div>
-                
+
                 <button className="text-white border border-gray-800 rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-3">
                   View Group
                 </button>

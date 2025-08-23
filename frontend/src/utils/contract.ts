@@ -5,8 +5,8 @@ import { PAYMESH_ABI } from "../abi/swiftswap_abi";
 // // Contract configuration
 // export const OLD_CONTRACT_ADDRESS =
 //   "0x057500f7e000dafe7350eee771b791a4d885db920539e741f96410e42809a68d";
-export const PAYMESH_ADDRESS =
-  "0x03eb5cc3d473d59331c48096cafa360d52b49fcd6a08b14a6811223c773a2d73";
+export const PAYMESH_ADDRESS ="0x06e7eb4c36900a090acca8a71c9a2ee861cf0cb69be98a812f0a85b13a18a7d2"
+  // "0x03eb5cc3d473d59331c48096cafa360d52b49fcd6a08b14a6811223c773a2d73";
 // // export const CONTRACT_ADDRESS =
 // //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
 // // ;
@@ -65,6 +65,19 @@ export const formatGroupMembers = (members: GroupMember[]) => {
     percentage: member.percentage,
   }));
 };
+
+export function epocTime(time: string) {
+  
+  const epochSeconds = time.replace("n",'');
+  console.log(epocTime)
+  const date = new Date(+epochSeconds * 1000); // multiply by 1000 to convert to milliseconds
+
+  // Epoch time in milliseconds
+  const epochMilliseconds = 1692777600000;
+  const date2 = new Date(epochMilliseconds);
+  console.log(date2)
+  return `${date2.getDate()}/${date2.getMonth() + 1}/${date2.getFullYear()}`;
+}
 
 // // Contract interaction functions
 // export const createContractInstance = (account: Account): Contract => {
