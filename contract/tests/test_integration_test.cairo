@@ -32,7 +32,7 @@ fn test_all_contract_flow_success() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
-    let group1_address = contract_address.create_group("TestGroup", members.clone(), token, 20);
+    let group1_address = contract_address.create_group("TestGroup", members.clone(), 20);
     stop_cheat_caller_address(contract_address.contract_address);
 
     let contract_balance_after = erc20_dispatcher.balance_of(contract_address.contract_address);
@@ -57,7 +57,7 @@ fn test_all_contract_flow_success() {
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
-    let group2_address = contract_address.create_group("INDIGO", two_member.clone(), token, 20);
+    let group2_address = contract_address.create_group("INDIGO", two_member.clone(), 20);
     stop_cheat_caller_address(contract_address.contract_address);
 
     // asset that the main contract has been set in the child contract
