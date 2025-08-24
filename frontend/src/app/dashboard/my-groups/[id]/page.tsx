@@ -45,32 +45,31 @@ const GroupDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const groupMember = useGroupMember(params.id as string);
-  const { address,account } = useAccount();
- 
+  const { address, account } = useAccount();
+  const [isSubmitting,setIsSubmitting] = useState(false)
 
-    const [usage, setUsage] = useState<undefined|string>(
-      undefined
-    );
-    const { readData: groupUsage } = useContractFetch(
-      PAYMESH_ABI,
-      "get_group_usage_paid",
-      // @ts-expect-error parmas can be undefined
-      [+params.id]
-    );
-    const { readData: usageCount } = useContractFetch(
-      PAYMESH_ABI,
-      "get_group_usage_count",
-      // @ts-expect-error  parmas can be undefined
-      [+params.id]
-    );
-  
-    useEffect(() => {
-      if (!groupUsage && !usageCount) return;
-      const m = +usageCount.toString();
-      const count = +groupUsage.toString();
-      const equate = `${count}/${m}`;
-      setUsage(equate);
-    }, [usage,usageCount]);
+  const [usage, setUsage] = useState<undefined | string>(undefined);
+  const { readData: groupUsage } = useContractFetch(
+    PAYMESH_ABI,
+    "get_group_usage_paid",
+    // @ts-expect-error parmas can be undefined
+    [+params.id]
+  );
+  const { readData: usageCount } = useContractFetch(
+    PAYMESH_ABI,
+    "get_group_usage_count",
+    // @ts-expect-error  parmas can be undefined
+    [+params.id]
+  );
+  //get_group_balance
+
+  useEffect(() => {
+    if (!groupUsage && !usageCount) return;
+    const m = +usageCount?.toString();
+    const count = +groupUsage?.toString();
+    const equate = `${count}/${m}`;
+    setUsage(equate);
+  }, [usage, usageCount]);
   const { transaction } = useGroupAddressHasSharesIn(address || "");
 
   // Get the current group data based on the URL ID
@@ -127,16 +126,10 @@ const GroupDetailsPage = () => {
   const { data: balance } = useBalance({
     token:
       "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d" as `0x${string}`,
-    address: "0x0" as `0x${string}`,
+    address: currentGroup?.groupAddress
+      ? (currentGroup.groupAddress as `0x${string}`)
+      : ("0x0" as `0x${string}`),
   });
-
-  const handleEditGroup = () => {
-    console.log("Edit group clicked");
-  };
-
-  const handleSplitFunds = () => {
-    console.log("Split funds clicked");
-  };
 
   const handleBackToGroups = () => {
     router.push("/dashboard/my-groups");
@@ -148,14 +141,18 @@ const GroupDetailsPage = () => {
     }
 
     try {
-      // const amount = parseFloat(formData.amount);
+      setIsSubmitting(true)
 
-      if (account != undefined && balance?.formatted && currentGroup?.groupAddress) {
+      if (
+        account != undefined &&
+        balance?.formatted &&
+        currentGroup?.groupAddress
+      ) {
         const swiftpayCall = {
           contractAddress: PAYMESH_ADDRESS,
           entrypoint: "pay",
           calldata: CallData.compile({
-            group_address:currentGroup?.groupAddress,
+            group_address: currentGroup?.groupAddress,
           }),
         };
 
@@ -198,9 +195,9 @@ const GroupDetailsPage = () => {
         console.log(status);
       }
     } catch (error) {
-      console.error("Error creating group:", error);
+      console.error("Error paying group:", error);
     } finally {
-     
+      setIsSubmitting(false)
     }
   };
   if (isLoading) {
@@ -396,8 +393,11 @@ const GroupDetailsPage = () => {
               {/*  @ts-expect-error array need to be empty */}
               {balance?.formatted != 0 && (
                 <>
-                  <button className="border-gradient-flow text-white px-4 py-2 rounded-sm transition-colors">
-                    Split Funds
+                  <button
+                    onClick={handleSplit}
+                    className={`${isSubmitting?"cursor-not-allowed":""} border-gradient-flow text-white px-4 py-2 rounded-sm transition-colors`}
+                  >
+                    {isSubmitting ? "spliting...." : "Split Funds"}
                   </button>
                   <div className="border-gradient-flow space-x-2.5 text-white px-4 py-2 rounded-sm transition-colors">
                     <span className="text-[#8398AD]">Balance:</span>
@@ -411,7 +411,9 @@ const GroupDetailsPage = () => {
           </div>
           {currentGroup?.groupAddress && (
             <div className="text-[#8398AD] flex items-center gap-1 p-4">
-              <h3 className=" border-r border-[#FFFFFF0D] pr-2 mr-2">Group address</h3>
+              <h3 className=" border-r border-[#FFFFFF0D] pr-2 mr-2">
+                Group address
+              </h3>
               <span className="text-[#E2E2E2] break-all text-sm">
                 {currentGroup?.groupAddress}
               </span>

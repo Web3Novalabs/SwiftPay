@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 import {
+  useAddressCreatedGroups,
   useContractFetch,
   useGetAllGroups,
   useGroupAddressHasSharesIn,
@@ -97,44 +98,17 @@ const MyGroupsPage = () => {
   const { account, address } = useAccount();
 
   const { transaction } = useGroupAddressHasSharesIn(address || "");
+ const {transaction:addressCreatedGroup} = useAddressCreatedGroups();
+  // // const transaction = useGetAllGroups();
 
-  // const transaction = useGetAllGroups();
-
-  console.log(
-    "groupLists xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    transaction
-  );
-  console.log("address xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", address);
+  // console.log(
+  //   "groupLists xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  //   transaction
+  // );
+  // console.log("address xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", addressCreatedGroup);
 
   // Check if wallet is connected
   const isWalletConnected = !!address;
-
-  // console.log(transaction);
-
-  // const {
-  //   readData: groupSharesData,
-  //   readIsLoading: groupSharesLoading,
-  //   readError: groupSharesError,
-  // } = useContractFetch(
-  //   SWIFTSWAP_ABI,
-  //   "group_address_has_shares_in",
-  //   address ? [address] : []
-  // );
-
-  // useEffect(() => {
-  //   if (account && groupSharesData) {
-  //     if (Array.isArray(groupSharesData)) {
-  //       groupSharesData.forEach((group, idx) => {
-  //         console.log(`Group #${idx}:`, group);
-  //       });
-  //     } else {
-  //       console.log("Group shares data:", groupSharesData);
-  //     }
-  //   }
-  //   if (groupSharesError) {
-  //     console.error("Error fetching group shares:", groupSharesError);
-  //   }
-  // }, [account, groupSharesData, groupSharesError]);
 
   // Show wallet connection message if not connected
   if (!isWalletConnected) {

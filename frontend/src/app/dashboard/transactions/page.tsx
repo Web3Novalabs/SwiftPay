@@ -170,7 +170,7 @@ const TransactionsPage = () => {
   });
 
   const transaction = useGetAllGroups();
-
+console.log(transaction)
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
@@ -252,39 +252,40 @@ const TransactionsPage = () => {
                   <th className="px-6 py-6   text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Group Address
                   </th>
-                  {/* <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
-                    Amount
-                  </th> */}
+                  <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
+                    Amount Recieved
+                  </th>
                   <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Date
                   </th>
                   {/* <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Status
                   </th>*/}
-                </tr> 
+                </tr>
               </thead>
               <tbody className="bg-[#FFFFFF0D] divide-y divide-[#FFFFFF0D]">
-                {transaction && transaction.map((transaction, index) => (
-                  <tr key={transaction.id} className="hover:bg-[#282e38]">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#E2E2E2]">
-                      {startIndex + index + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2] font-mono">
-                      {transaction.groupAddress}
-                    </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#E2E2E2]">
-                      {transaction.amount}
-                    </td> */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2]">
-                      {transaction.date}
-                    </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap">
+                {transaction &&
+                  transaction.map((transaction, index) => (
+                    <tr key={transaction.id} className="hover:bg-[#282e38]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#E2E2E2]">
+                        {startIndex + index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2] font-mono">
+                        {transaction.groupAddress}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#E2E2E2]">
+                        {transaction.amount ? `STK ${transaction.amount.toFixed(2)}` : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2]">
+                        {transaction.date}
+                      </td>
+                      {/* <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2]">
                         {transaction.usage_limit_reached}
                       </span>
                     </td> */}
-                  </tr>
-                ))}
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

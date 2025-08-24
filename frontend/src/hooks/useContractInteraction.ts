@@ -1,6 +1,6 @@
 import { useAccount, useContract, useReadContract } from "@starknet-react/core";
 import { useEffect, useState } from "react";
-import { CreateGroupData, epocTime, PAYMESH_ADDRESS } from "../utils/contract";
+import { CreateGroupData, epocTime, ONE_STK, PAYMESH_ADDRESS } from "../utils/contract";
 import { Abi } from "starknet";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 
@@ -121,6 +121,7 @@ export function useGetAllGroups() {
     id: string;
     usage_limit_reached: boolean;
     groupAddress: string;
+    amount:number
   }
 
   const [transaction, setTransaction] = useState<GroupData[] | undefined>(
@@ -146,6 +147,7 @@ export function useGetAllGroups() {
         id: data.id.toString(),
         usage_limit_reached: data.usage_limit_reached,
         groupAddress: `0x0${data["group_address"].toString(16)}`,
+        amount: +data.total_amount.toString()/ONE_STK,
       });
     });
     setTransaction(groupData);
@@ -234,6 +236,56 @@ export function useGroupAddressHasSharesIn(address: string) {
   const { readData: groupList } = useContractFetch(
     PAYMESH_ABI,
     "group_address_has_shares_in",
+    address ? [address] : ["0x0"] // ✅ Only call contract if address exists
+  );
+
+  useEffect(() => {
+    if (!groupList || !address) return; //
+    const groupData: GroupData[] = [];
+    groupList.forEach((data: ContractGroupData) => {
+      groupData.push({
+        creator: `0x0${data.creator.toString(16)}`,
+        date: data.date ? epocTime(data.date.toString()) : "",
+        name: data.name,
+        id: data.id.toString(),
+        usage_limit_reached: data.usage_limit_reached,
+        groupAddress: `0x0${data["group_address"].toString(16)}`,
+      });
+    });
+    setTransaction(groupData);
+  }, [groupList, address]); // ✅ Add address to dependencies
+
+  return { transaction };
+}
+
+export function useAddressCreatedGroups() {
+  const {address} = useAccount()
+  interface GroupData {
+    creator: string;
+    date: string;
+    name: string;
+    id: string;
+    usage_limit_reached: boolean;
+    groupAddress: string;
+  }
+
+  interface ContractGroupData {
+    creator: { toString: (radix: number) => string };
+    date: { toString: () => string };
+    name: string;
+    id: { toString: () => string };
+    usage_limit_reached: boolean;
+    group_address: { toString: (radix: number) => string };
+  }
+
+  const [transaction, setTransaction] = useState<GroupData[] | undefined>(
+    undefined
+  );
+
+  /// list of group an address has shares in
+  const { readData: groupList } = useContractFetch(
+    PAYMESH_ABI,
+    "get_groups_created_by_address",
     address ? [address] : ["0x0"] // ✅ Only call contract if address exists
   );
 

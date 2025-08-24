@@ -94,6 +94,10 @@ export const PAYMESH_ABI: Abi = [
         name: "date",
         type: "core::integer::u64",
       },
+      {
+        name: "total_amount",
+        type: "core::integer::u256",
+      },
     ],
   },
   {
@@ -174,6 +178,22 @@ export const PAYMESH_ABI: Abi = [
           {
             name: "usage_limit_reached",
             type: "core::bool",
+          },
+        ],
+        outputs: [
+          {
+            type: "core::array::Array::<contract::base::types::Group>",
+          },
+        ],
+        state_mutability: "view",
+      },
+      {
+        type: "function",
+        name: "get_groups_created_by_address",
+        inputs: [
+          {
+            name: "address",
+            type: "core::starknet::contract_address::ContractAddress",
           },
         ],
         outputs: [
