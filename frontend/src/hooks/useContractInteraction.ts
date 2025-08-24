@@ -140,9 +140,9 @@ export function useGetAllGroups() {
       console.log("DATA xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", data);
       groupData.push({
         creator: `0x0${data.creator.toString(16)}`,
-        date: data.date ? epocTime(data.date.toString(16)) : "",
+        date: data.date ? epocTime(data.date.toString()) : "",
         name: data.name,
-        id: `0x0${data.id.toString(16)}`,
+        id: data.id.toString(),
         usage_limit_reached: data.usage_limit_reached,
         groupAddress: `0x0${data["group_address"].toString(16)}`,
       });
@@ -244,7 +244,7 @@ export function useGroupAddressHasSharesIn(address: string) {
         creator: `0x0${data.creator.toString(16)}`,
         date: data.date ? epocTime(data.date.toString()) : "",
         name: data.name,
-        id: `0x0${data.id.toString(16)}`,
+        id: data.id.toString(),
         usage_limit_reached: data.usage_limit_reached,
         groupAddress: `0x0${data["group_address"].toString(16)}`,
       });
