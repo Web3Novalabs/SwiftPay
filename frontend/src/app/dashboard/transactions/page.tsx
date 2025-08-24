@@ -11,6 +11,8 @@ import {
 import { useContractFetch } from "@/hooks/useContractInteraction";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 import { epocTime } from "@/utils/contract";
+import WalletConnect from "@/app/components/WalletConnect";
+import { useAccount } from "@starknet-react/core";
 
 // Sample transaction data
 const transactionData = [
@@ -169,18 +171,49 @@ const TransactionsPage = () => {
     return true;
   });
 
-  const { readData: paid } = useContractFetch(
-    PAYMESH_ABI,
-    "get_all_groups",
-    []
-  ); 
+  const { readData: paid } = useContractFetch(PAYMESH_ABI, "get_all_groups", [
+    "",
+  ]);
 
- 
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  const { address } = useAccount();
+  const isWalletConnected = !!address;
+
+  if (!isWalletConnected) {
+    return (
+      <div className="min-h-[50vh] text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#434672] to-[#755a5a] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Wallet Not Connected
+          </h2>
+          <p className="text-gray-300 mb-4">
+            Please connect your wallet to view your groups
+          </p>
+          <WalletConnect />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
