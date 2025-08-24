@@ -19,11 +19,11 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(StarknetStream)({
     streamUrl,
     finality: "accepted",
-    startingBlock: BigInt(startingBlock),
+    startingBlock: BigInt("1851544"),
     filter: {
       events: [
         {
-          address: "0x0539b10edc2e0e44523f4a06dee843022b42e37e358448fbaa940bd1f4431637",
+          address: "0x07c23be2c3882e9f05ff720c4160c001f9b95bdf57a69220c3e2979cb9e00929",
           keys: [GROUP_CREATED_SELECTOR],
         },
         {
@@ -68,7 +68,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
 }
 
 const pay = (address: string) => {
-  fetch(`${process.env.API}/pay_member`, {
+  fetch(`http://localhost:8080/pay_member`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(address),
