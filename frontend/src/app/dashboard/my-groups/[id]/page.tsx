@@ -34,7 +34,12 @@ import {
 } from "@/hooks/useContractInteraction";
 import WalletConnect from "@/app/components/WalletConnect";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
-import { myProvider, ONE_STK, PAYMESH_ADDRESS, strkTokenAddress } from "@/utils/contract";
+import {
+  myProvider,
+  ONE_STK,
+  PAYMESH_ADDRESS,
+  strkTokenAddress,
+} from "@/utils/contract";
 import { cairo, CallData, PaymasterDetails } from "starknet";
 
 const GroupDetailsPage = () => {
@@ -46,7 +51,7 @@ const GroupDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const groupMember = useGroupMember(params.id as string);
   const { address, account } = useAccount();
-  const [isSubmitting,setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [usage, setUsage] = useState<undefined | string>(undefined);
   const { readData: groupUsage } = useContractFetch(
@@ -141,7 +146,7 @@ const GroupDetailsPage = () => {
     }
 
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
 
       if (
         account != undefined &&
@@ -161,29 +166,30 @@ const GroupDetailsPage = () => {
           entrypoint: "approve",
           calldata: [
             PAYMESH_ADDRESS, // spender
-            cairo.uint256(ONE_STK),
+            "1000000000000000000",
+            "0",
           ],
         };
 
         const multicallData = [approveCall, swiftpayCall];
-        // const result = await account.execute(multicallData)
+        const result = await account.execute(multicallData);
 
-        const feeDetails: PaymasterDetails = {
-          feeMode: {
-            mode: "sponsored",
-          },
-        };
+        // const feeDetails: PaymasterDetails = {
+        //   feeMode: {
+        //     mode: "sponsored",
+        //   },
+        // };
 
-        const feeEstimation = await account?.estimatePaymasterTransactionFee(
-          [...multicallData],
-          feeDetails
-        );
+        // const feeEstimation = await account?.estimatePaymasterTransactionFee(
+        //   [...multicallData],
+        //   feeDetails
+        // );
 
-        const result = await account?.executePaymasterTransaction(
-          [...multicallData],
-          feeDetails,
-          feeEstimation?.suggested_max_fee_in_gas_token
-        );
+        // const result = await account?.executePaymasterTransaction(
+        //   [...multicallData],
+        //   feeDetails,
+        //   feeEstimation?.suggested_max_fee_in_gas_token
+        // );
 
         const status = await myProvider.waitForTransaction(
           result?.transaction_hash as string
@@ -197,7 +203,7 @@ const GroupDetailsPage = () => {
     } catch (error) {
       console.error("Error paying group:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   };
   if (isLoading) {
@@ -395,7 +401,9 @@ const GroupDetailsPage = () => {
                 <>
                   <button
                     onClick={handleSplit}
-                    className={`${isSubmitting?"cursor-not-allowed":""} border-gradient-flow text-white px-4 py-2 rounded-sm transition-colors`}
+                    className={`${
+                      isSubmitting ? "cursor-not-allowed" : ""
+                    } cursor-pointer border-gradient-flow text-white px-4 py-2 rounded-sm transition-colors`}
                   >
                     {isSubmitting ? "spliting...." : "Split Funds"}
                   </button>
