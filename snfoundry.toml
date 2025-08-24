@@ -1,0 +1,5 @@
+
+[sncast.name]
+account = "name"
+accounts-file = "/Users/macbookpro/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/l3W2omp97bsZzhe8YXQOU"
