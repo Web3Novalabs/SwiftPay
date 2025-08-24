@@ -33,7 +33,7 @@ fn test_create_group_and_withdraw_success() {
 
     contract_address.create_group("TestGroup", members, 2);
     assert(
-        contract_address.get_groups_created_by_address(get_caller_address()).len() == 1,
+        contract_address.get_groups_created_by_address(CREATOR_ADDR()).len() == 1,
         'number should increase',
     );
     stop_cheat_caller_address(contract_address.contract_address);
@@ -1251,9 +1251,9 @@ fn test_top_subscription_function() {
     erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
-    let mut group = contract_address.get_group(1);
     start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
     contract_address.pay(group_address);
+    let mut group = contract_address.get_group(1);
     assert(group.total_amount == 1_000_000_000_000_000_000_000, 'incorrect amount');
     stop_cheat_caller_address(contract_address.contract_address);
 
