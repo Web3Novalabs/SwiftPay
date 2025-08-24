@@ -8,7 +8,9 @@ import {
 } from "@starknet-react/core";
 import { sepolia, mainnet } from "@starknet-react/chains";
 import { useState } from "react";
-
+import bravoos from "../../../public/braavos_icon.jpeg.svg"
+import argent from "../../../public/Argent.svg"
+import Image from "next/image";
 export default function WalletConnect() {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending } = useConnect();
@@ -223,23 +225,11 @@ export default function WalletConnect() {
                       className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#434672] hover:bg-[#755A5A] text-[#E2E2E2] rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#755A5A] rounded-lg flex items-center justify-center">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center">
                           {connector.id === "braavos" ? (
-                            <svg
-                              className="w-5 h-5 sm:w-6 sm:h-6 text-[#E2E2E2]"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
-                              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                            </svg>
+                            <Image src={bravoos} alt="bravoos wallet" />
                           ) : connector.id === "argentX" ? (
-                            <svg
-                              className="w-5 h-5 sm:w-6 sm:h-6 text-[#E2E2E2]"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                            </svg>
+                            <Image src={argent} alt="argent wallet" />
                           ) : (
                             <svg
                               className="w-5 h-5 sm:w-6 sm:h-6 text-[#E2E2E2]"

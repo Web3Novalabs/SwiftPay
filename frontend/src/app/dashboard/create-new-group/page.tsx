@@ -128,11 +128,14 @@ const CreateNewGroup = () => {
 
 
   useEffect(() => {
-    if (usageFee) {
+    if (!usageFee) return
+
       const fee = BigInt(usageFee);
+      console.log(fee)
       setCreationFee(Number(fee) / ONE_STK);
-    }
   }, [usageFee]);
+
+  console.log(creationFee,"feeeee")
   // Reset success state when component unmounts or when navigating away
   useEffect(() => {
     return () => {
@@ -391,7 +394,8 @@ const CreateNewGroup = () => {
     setHasProcessedTransaction(false);
     setResultHash("");
   };
-
+  const fee = creationFee ? Number(creationFee * Number(formData.usage)).toFixed(2) : ""
+  console.log(fee, "rr");
   const isWalletConnected = !!address;
 
   if (!isWalletConnected) {
@@ -699,10 +703,10 @@ const CreateNewGroup = () => {
                 Total cost:
               </h3>
               <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
-                STRK{" "}
-                {creationFee
-                  ? Number(creationFee * Number(formData.usage)).toFixed(2)
-                  : ""}
+                STRK
+             
+                {Number(Number(formData.usage)).toFixed(2)}
+               
               </p>
             </div>
           </div>

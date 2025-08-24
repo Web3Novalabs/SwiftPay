@@ -51,9 +51,9 @@ const GroupDetailsPage = () => {
     const [usage, setUsage] = useState<undefined|string>(
       undefined
     );
-    const { readData:groupUsage } = useContractFetch(
+    const { readData: groupUsage } = useContractFetch(
       PAYMESH_ABI,
-      "get_group_usage_paid_history",
+      "get_group_usage_paid",
       // @ts-expect-error parmas can be undefined
       [+params.id]
     );
@@ -67,9 +67,8 @@ const GroupDetailsPage = () => {
     useEffect(() => {
       if (!groupUsage && !usageCount) return;
       const m = +usageCount.toString();
-      const count = +groupUsage[0].toString();
-      const cal = count - m
-      const equate = cal ? `${count}/${cal}` : `${count}/${count}`;
+      const count = +groupUsage.toString();
+      const equate = `${count}/${m}`;
       setUsage(equate);
     }, [usage,usageCount]);
   const { transaction } = useGroupAddressHasSharesIn(address || "");
