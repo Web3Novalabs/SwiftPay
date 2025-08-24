@@ -240,30 +240,31 @@ const CreateNewGroup = () => {
           entrypoint: "approve",
           calldata: [
             PAYMESH_ADDRESS, // spender
-            "1000000000000000000",
-            "0"
+            cairo.uint256(+formData?.usage * ONE_STK),
+            // "1000000000000000000",
+            // "0"
           ],
         };
 
-        const multicallData = [approveCall,swiftpayCall];
-        const result = await account.execute(multicallData)
+        const multicallData = [approveCall ,swiftpayCall];
+        // const result = await account.execute(multicallData)
 
-        // const feeDetails: PaymasterDetails = {
-        //   feeMode: {
-        //     mode: "sponsored",
-        //   },
-        // };
+        const feeDetails: PaymasterDetails = {
+          feeMode: {
+            mode: "sponsored",
+          },
+        };
 
-        // const feeEstimation = await account?.estimatePaymasterTransactionFee(
-        //   [...multicallData],
-        //   feeDetails
-        // );
+        const feeEstimation = await account?.estimatePaymasterTransactionFee(
+          [...multicallData],
+          feeDetails
+        );
 
-        // const result = await account?.executePaymasterTransaction(
-        //   [...multicallData],
-        //   feeDetails,
-        //   feeEstimation?.suggested_max_fee_in_gas_token
-        // );
+        const result = await account?.executePaymasterTransaction(
+          [...multicallData],
+          feeDetails,
+          feeEstimation?.suggested_max_fee_in_gas_token
+        );
 
         const status = await myProvider.waitForTransaction(
           result?.transaction_hash as string
