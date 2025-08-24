@@ -1,6 +1,6 @@
 import { useAccount, useContract, useReadContract } from "@starknet-react/core";
 import { useEffect, useState } from "react";
-import { CreateGroupData, PAYMESH_ADDRESS } from "../utils/contract";
+import { CreateGroupData, epocTime, PAYMESH_ADDRESS } from "../utils/contract";
 import { Abi } from "starknet";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
 
@@ -113,55 +113,144 @@ export const useContractInteraction = () => {
   };
 };
 
-// export function useGetAllGroups() {
-//   const [transaction, setTransaction] = useState();
-//   const { readData: groupList } = useContractFetch(
-//     PAYMESH_ABI,
-//     "get_all_groups",
-//     [0]
-//   );
+export function useGetAllGroups() {
+  interface GroupData {
+    creator: string;
+    date: string;
+    name: string;
+    id: string;
+    usage_limit_reached: boolean;
+    groupAddress: string;
+  }
 
-//   useEffect(() => {
-//     if (!groupList) return;
-//     let groupData = [];
-//     groupList.map((data) => {
-//       groupData.push({
-//         creator: `0x0${data.creator.toString(16)}`,
-//         date: data.date ? epocTime(data.date.toString(16)) : "",
-//         name: data.name,
-//         id: `0x0${data.id.toString(16)}`,
-//         usage_limit_reached: data.usage_limit_reached,
-//         groupAddress: `0x0${data["group_address"].toString(16)}`,
-//       });
-//     });
-//     setTransaction(groupData);
-//   }, [groupList]);
+  const [transaction, setTransaction] = useState<GroupData[] | undefined>(
+    undefined
+  );
+  const { readData: groupList } = useContractFetch(
+    PAYMESH_ABI,
+    "get_all_groups",
+    [0]
+  );
 
-//   return transaction;
-// }
+  useEffect(() => {
+    if (!groupList) return;
+    const groupData: GroupData[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    groupList.map((data: any) => {
+      console.log("DATA xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", data);
+      groupData.push({
+        creator: `0x0${data.creator.toString(16)}`,
+        date: data.date ? epocTime(data.date.toString(16)) : "",
+        name: data.name,
+        id: `0x0${data.id.toString(16)}`,
+        usage_limit_reached: data.usage_limit_reached,
+        groupAddress: `0x0${data["group_address"].toString(16)}`,
+      });
+    });
+    setTransaction(groupData);
+  }, [groupList]);
+
+  return transaction;
+}
 
 /// list of group an address has shares in
-
 // members in a group
-// export function useGroupMember(id) {
-//   const [groupMember, setGroupMember] = useState();
-//   const { readData: member } = useContractFetch(
-//     PAYMESH_ABI,
-//     "get_group_member",
-//     [id]
-//   );
-//   useEffect(() => {
-//     if (!member) return;
-//     let membersData = [];
-//     member.map((data) => {
-//       console.log(data);
-//       membersData.push({
-//         addr: `0x0${data.addr.toString(16)}`,
-//         percentage: Number(data.percentage),
-//       });
-//     });
-//     setGroupMember(membersData);
-//   }, [member]);
+export function useGroupMember(id: string) {
+  interface GroupMember {
+    addr: string;
+    percentage: number;
+  }
 
-//   return groupMember;
-// }
+  interface ContractMemberData {
+    addr: { toString: (radix: number) => string };
+    percentage: { toString: () => string };
+  }
+
+  const [groupMember, setGroupMember] = useState<GroupMember[] | undefined>(
+    undefined
+  );
+
+  console.log("useGroupMember called with ID:", id);
+
+  const { readData: member } = useContractFetch(
+    PAYMESH_ABI,
+    "get_group_member",
+    [id]
+  );
+
+  useEffect(() => {
+    console.log("useGroupMember useEffect triggered for ID:", id);
+    console.log("Raw member data:", member);
+
+    if (!member) {
+      console.log("No member data yet for ID:", id);
+      return;
+    }
+
+    const membersData: GroupMember[] = [];
+    console.log("Processing member data for ID:", id, "Data:", member);
+
+    member.forEach((data: ContractMemberData) => {
+      const memberData = {
+        addr: `0x0${data.addr.toString(16)}`,
+        percentage: Number(data.percentage),
+      };
+      membersData.push(memberData);
+      console.log("Processed member data:", memberData);
+    });
+
+    console.log("Final members data for ID:", id, ":", membersData);
+    setGroupMember(membersData);
+  }, [member, id]);
+
+  return groupMember;
+}
+
+export function useGroupAddressHasSharesIn(address: string) {
+  interface GroupData {
+    creator: string;
+    date: string;
+    name: string;
+    id: string;
+    usage_limit_reached: boolean;
+    groupAddress: string;
+  }
+
+  interface ContractGroupData {
+    creator: { toString: (radix: number) => string };
+    date: { toString: () => string };
+    name: string;
+    id: { toString: () => string };
+    usage_limit_reached: boolean;
+    group_address: { toString: (radix: number) => string };
+  }
+
+  const [transaction, setTransaction] = useState<GroupData[] | undefined>(
+    undefined
+  );
+
+  /// list of group an address has shares in
+  const { readData: groupList } = useContractFetch(
+    PAYMESH_ABI,
+    "group_address_has_shares_in",
+    address ? [address] : ["0x0"] // ✅ Only call contract if address exists
+  );
+
+  useEffect(() => {
+    if (!groupList || !address) return; //
+    const groupData: GroupData[] = [];
+    groupList.forEach((data: ContractGroupData) => {
+      groupData.push({
+        creator: `0x0${data.creator.toString(16)}`,
+        date: data.date ? epocTime(data.date.toString()) : "",
+        name: data.name,
+        id: `0x0${data.id.toString(16)}`,
+        usage_limit_reached: data.usage_limit_reached,
+        groupAddress: `0x0${data["group_address"].toString(16)}`,
+      });
+    });
+    setTransaction(groupData);
+  }, [groupList, address]); // ✅ Add address to dependencies
+
+  return { transaction };
+}

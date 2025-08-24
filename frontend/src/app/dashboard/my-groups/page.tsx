@@ -23,9 +23,67 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
-import { useContractFetch } from "@/hooks/useContractInteraction";
+import {
+  useContractFetch,
+  useGetAllGroups,
+  useGroupAddressHasSharesIn,
+  useGroupMember,
+} from "@/hooks/useContractInteraction";
 import { useTransactionReceipt } from "@starknet-react/core";
+import WalletConnect from "@/app/components/WalletConnect";
 // import { SWIFTSWAP_ABI } from "@/abi/swiftswap_abi";
+
+// Separate component for individual group cards
+const GroupCard = ({
+  group,
+  address,
+}: {
+  group: { id: string; name: string; creator: string; date: string };
+  address: string;
+}) => {
+  const groupMember = useGroupMember(group.id);
+
+  return (
+    <div className="bg-[#2A2D35] rounded-sm border-none text-sm p-6 hover:border-gray-800 transition-colors">
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-xl font-semibold text-white">{group.name}</h3>
+        <span
+          className={`px-3 py-1 text-sm rounded-sm font-medium ${
+            group.creator === address
+              ? "bg-[#10273E] text-[#0073E6]"
+              : "bg-[#103E3A] text-[#00E69D]"
+          }`}
+        >
+          {group.creator === address ? "Creator" : "Member"}
+        </span>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="space-y-3 mb-6 text-[12px]">
+          <div className="flex items-center gap-2 text-gray-300">
+            <Users className="w-4 h-4" />
+            <span>
+              Members |{" "}
+              <b className="text-white"> {groupMember?.length || 0} </b>{" "}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-300">
+            <Calendar className="w-4 h-4" />
+            <span>
+              Date Created | <b className="text-white"> {group.date} </b>{" "}
+            </span>
+          </div>
+        </div>
+
+        <Link
+          href={`/dashboard/my-groups/${group.id}`}
+          className="text-white border-gradient-flow rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-2 md:px-3 hover:bg-[#5a5a5a] transition-colors cursor-pointer"
+        >
+          View Group
+        </Link>
+      </div>
+    </div>
+  );
+};
 
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
@@ -33,81 +91,23 @@ const sofiaSans = Sofia_Sans({
   variable: "--font-gt-walsheim-trial",
 });
 
-const mockGroups: GroupSummary[] = [
-  {
-    id: 1,
-    name: "TheBuidl Hackathon",
-    role: "Creator",
-    members: 5,
-    dateCreated: "29th - 08 - 2025",
-    isCreator: true,
-  },
-  {
-    id: 2,
-    name: "TheBuidl Hackathon",
-    role: "Member",
-    members: 5,
-    dateCreated: "29th - 08 - 2025",
-    isCreator: false,
-  },
-  {
-    id: 3,
-    name: "TheBuidl Hackathon",
-    role: "Creator",
-    members: 5,
-    dateCreated: "29th - 08 - 2025",
-    isCreator: true,
-  },
-  {
-    id: 4,
-    name: "Innovate Summit",
-    role: "Member",
-    members: 5,
-    dateCreated: "15th - 09 - 2025",
-    isCreator: false,
-  },
-  {
-    id: 5,
-    name: "Tech Fest 2025",
-    role: "Member",
-    members: 5,
-    dateCreated: "22nd - 10 - 2025",
-    isCreator: false,
-  },
-];
-
 const MyGroupsPage = () => {
-  const totalGroups = mockGroups.length;
-  const groupsCreated = mockGroups.filter((group) => group.isCreator).length;
   const router = useRouter();
 
   const { account, address } = useAccount();
 
-  const [transaction, setTransaction] = useState();
+  const { transaction } = useGroupAddressHasSharesIn(address || "");
 
-  /// list of group an address has shares in
-  const { readData: groupList } = useContractFetch(
-    PAYMESH_ABI,
-    "group_address_has_shares_in",
-    ["0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a"]
+  // const transaction = useGetAllGroups();
+
+  console.log(
+    "groupLists xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    transaction
   );
-  console.log(groupList);
+  console.log("address xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", address);
 
-  // useEffect(() => {
-  //   if (!groupList) return;
-  //   let groupData = [];
-  //   groupList.map((data) => {
-  //     groupData.push({
-  //       creator: `0x0${data.creator.toString(16)}`,
-  //       date: data.date ? epocTime(data.date.toString(16)) : "",
-  //       name: data.name,
-  //       id: `0x0${data.id.toString(16)}`,
-  //       usage_limit_reached: data.usage_limit_reached,
-  //       groupAddress: `0x0${data["group_address"].toString(16)}`,
-  //     });
-  //   });
-  //   setTransaction(groupData);
-  // }, [transaction]);
+  // Check if wallet is connected
+  const isWalletConnected = !!address;
 
   // console.log(transaction);
 
@@ -136,7 +136,37 @@ const MyGroupsPage = () => {
   //   }
   // }, [account, groupSharesData, groupSharesError]);
 
-  const groupSharesLoading = true;
+  // Show wallet connection message if not connected
+  if (!isWalletConnected) {
+    return (
+      <div className="min-h-[50vh] text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#434672] to-[#755a5a] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Wallet Not Connected
+          </h2>
+          <p className="text-gray-300 mb-4">
+            Please connect your wallet to view your groups
+          </p>
+          <WalletConnect />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-white p-6">
@@ -193,14 +223,15 @@ const MyGroupsPage = () => {
         <div className="bg-[#2A2D35] rounded-sm px-6 py-3 flex items-center gap-4">
           <LucideUsers className="w-6 h-6 text-white" />
           <div>
-            {groupSharesLoading ? (
+            {!transaction ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <p className="text-gray-300">Loading...</p>
+                <p className="text-gray-300">Loading groups...</p>
               </div>
             ) : (
               <p className="text-gray-300">
-                Total Groups - <b className="text-white">{totalGroups}</b>{" "}
+                Total Groups -{" "}
+                <b className="text-white">{transaction?.length || 0}</b>{" "}
               </p>
             )}
           </div>
@@ -209,14 +240,18 @@ const MyGroupsPage = () => {
         <div className="bg-[#2A2D35] rounded-sm px-6 flex items-center gap-4">
           <Plus className="w-6 h-6 text-white" />
           <div>
-            {groupSharesLoading ? (
+            {!transaction ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
                 <p className="text-gray-300">Loading...</p>
               </div>
             ) : (
               <p className="text-gray-300">
-                Groups Created - <b className="text-white">{groupsCreated}</b>{" "}
+                Groups Created -{" "}
+                <b className="text-white">
+                  {transaction?.filter((group) => group.creator === address)
+                    .length || 0}
+                </b>{" "}
               </p>
             )}
           </div>
@@ -224,50 +259,10 @@ const MyGroupsPage = () => {
       </div>
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${sofiaSans.className}`}
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-12 gap-6 ${sofiaSans.className}`}
       >
-        {mockGroups.map((group) => (
-          <div
-            key={group.id}
-            className="bg-[#2A2D35] rounded-sm border-none text-sm p-6 hover:border-gray-800 transition-colors"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-white">{group.name}</h3>
-              <span
-                className={`px-3 py-1 text-sm rounded-sm font-medium ${
-                  group.isCreator
-                    ? "bg-[#10273E] text-[#0073E6]"
-                    : "bg-[#103E3A] text-[#00E69D]"
-                }`}
-              >
-                {group.role}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="space-y-3 mb-6 text-[12px]">
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Users className="w-4 h-4" />
-                  <span>
-                    Members | <b className="text-white"> {group.members} </b>{" "}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    Date Created |{" "}
-                    <b className="text-white"> {group.dateCreated} </b>{" "}
-                  </span>
-                </div>
-              </div>
-
-              <Link
-                href={`/dashboard/my-groups/${group.id}`}
-                className="text-white border-gradient-flow rounded-sm bg-[#4C4C4C] h-fit text-sm py-2 px-3 hover:bg-[#5a5a5a] transition-colors cursor-pointer"
-              >
-                View Group
-              </Link>
-            </div>
-          </div>
+        {transaction?.map((group) => (
+          <GroupCard key={group.id} group={group} address={address || ""} />
         ))}
       </div>
     </div>

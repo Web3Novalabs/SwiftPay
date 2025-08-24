@@ -112,6 +112,7 @@ export class GroupService {
   }
 
   // Get group transaction history
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async getGroupTransactions(groupId: number): Promise<any[]> {
     try {
       const response = await fetch(

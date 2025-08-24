@@ -36,6 +36,7 @@ import { SWIFTPAY_CONTRACT_ADDRESS } from "@/constants/abi";
 import { Trash, Trash2 } from "lucide-react";
 import { useContractFetch } from "@/hooks/useContractInteraction";
 import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
+import WalletConnect from "@/app/components/WalletConnect";
 
 interface GroupMember {
   addr: string;
@@ -91,6 +92,7 @@ const CreateNewGroup = () => {
 
   const [resultHash, setResultHash] = useState("");
   const [hasProcessedTransaction, setHasProcessedTransaction] = useState(false);
+  const { address } = useAccount();
 
   const { data, error } = useTransactionReceipt({
     hash: resultHash,
@@ -124,8 +126,9 @@ const CreateNewGroup = () => {
   const { readData: usageFee } = useContractFetch(
     PAYMESH_ABI,
     "get_group_usage_fee",
-    []
+    [""]
   );
+
   const ONE_STK = 1000000000000000000;
   useEffect(() => {
     if (usageFee) {
@@ -395,6 +398,39 @@ const CreateNewGroup = () => {
     setResultHash("");
   };
 
+  const isWalletConnected = !!address;
+
+  if (!isWalletConnected) {
+    return (
+      <div className="min-h-[50vh] text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#434672] to-[#755a5a] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Wallet Not Connected
+          </h2>
+          <p className="text-gray-300 mb-4">
+            Please connect your wallet to view your groups
+          </p>
+          <WalletConnect />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-0 sm:px-4 md:px-0">
       <div className="space-y-2 border-b border-[#FFFFFF0D] pb-8">
@@ -648,8 +684,8 @@ const CreateNewGroup = () => {
               <h3 className="text-[#8398AD] text-sm sm:text-base font-semibold">
                 Cost per use:
               </h3>
-              <p className="text-[#E2E2E2] text-base sm:text-lg font-bold">
-                STRK {creationFee ? creationFee.toFixed(2) : ""}
+              <p className="text-[#E2E2E2] text-base sm:text-base font-bold">
+                {creationFee ? creationFee.toFixed(2) : "1"} STRK
               </p>
             </div>
 
