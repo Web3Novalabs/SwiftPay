@@ -23,7 +23,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     filter: {
       events: [
         {
-          address: "0x03eb5cc3d473d59331c48096cafa360d52b49fcd6a08b14a6811223c773a2d73",
+          address: "0x06e7eb4c36900a090acca8a71c9a2ee861cf0cb69be98a812f0a85b13a18a7d2",
           keys: [GROUP_CREATED_SELECTOR],
         },
         {

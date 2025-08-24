@@ -10,7 +10,7 @@ use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address,
     stop_cheat_caller_address,
 };
-use starknet::{ClassHash, ContractAddress};
+use starknet::{ClassHash, ContractAddress, get_caller_address};
 use crate::test_util::{
     ADMIN_ADDR, CREATOR_ADDR, EMERGENCY_WITHDRAW_ADDR, ONE_STRK, TOKEN_ADDR, USER1_ADDR, USER2_ADDR,
     USER3_ADDR, deploy_autoshare_contract, group_member_two,
@@ -32,6 +32,10 @@ fn test_create_group_and_withdraw_success() {
     start_cheat_caller_address(contract_address.contract_address, CREATOR_ADDR());
 
     contract_address.create_group("TestGroup", members, 2);
+    assert(
+        contract_address.get_groups_created_by_address(get_caller_address()).len() == 1,
+        'number should increase',
+    );
     stop_cheat_caller_address(contract_address.contract_address);
 
     let group_address = contract_address.get_group_address(1);
@@ -483,6 +487,7 @@ fn test_pay_logic() {
     );
 
     let group = contract_address.get_group(1);
+    assert(group.total_amount == 1_000_000_000_000_000_000_000, 'invalid amount');
     assert(!group.usage_limit_reached, 'group is not paid');
     stop_cheat_caller_address(contract_address.contract_address);
 }
@@ -1246,8 +1251,10 @@ fn test_top_subscription_function() {
     erc20_dispatcher.transfer(group_address, 1_000_000_000_000_000_000_000);
     stop_cheat_caller_address(erc20_dispatcher.contract_address);
 
+    let mut group = contract_address.get_group(1);
     start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
     contract_address.pay(group_address);
+    assert(group.total_amount == 1_000_000_000_000_000_000_000, 'incorrect amount');
     stop_cheat_caller_address(contract_address.contract_address);
 
     usage_limit_reached_groups = contract_address.get_groups_by_usage_limit_reached(true);
@@ -1281,6 +1288,11 @@ fn test_top_subscription_function() {
 
     start_cheat_caller_address(contract_address.contract_address, USER1_ADDR());
     contract_address.pay(group_address);
+    group = contract_address.get_group(1);
+    assert(
+        group.total_amount == 1_000_000_000_000_000_000_000 + 1_000_000_000_000_000_000_000,
+        'incorrect amount',
+    );
     stop_cheat_caller_address(contract_address.contract_address);
 
     stop_cheat_caller_address(contract_address.contract_address);

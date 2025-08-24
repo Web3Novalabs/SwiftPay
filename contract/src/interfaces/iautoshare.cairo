@@ -12,6 +12,10 @@ pub trait IAutoShare<TContractState> {
     fn get_groups_by_usage_limit_reached(
         self: @TContractState, usage_limit_reached: bool,
     ) -> Array<Group>;
+    // returns an array of groups created by address
+    fn get_groups_created_by_address(
+        self: @TContractState, address: ContractAddress,
+    ) -> Array<Group>;
     fn get_group_member(self: @TContractState, group_id: u256) -> Array<GroupMember>;
     // renews a subscription fo a group
     fn top_subscription(ref self: TContractState, group_id: u256, new_planned_usage_count: u256);

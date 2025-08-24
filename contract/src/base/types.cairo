@@ -15,6 +15,7 @@ pub struct Group {
     pub creator: ContractAddress,
     pub group_address: ContractAddress,
     pub date: u64,
+    pub total_amount: u256,
 }
 
 // GroupUpdateRequest type for tracking update requests

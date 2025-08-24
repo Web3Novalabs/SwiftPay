@@ -64,6 +64,8 @@ pub mod AutoShare {
     pub struct Storage {
         groups: Map<u256, Group>,
         group_members: Map<u256, Vec<GroupMember>>,
+        // stires the id of all groups created by an address
+        groups_created_by_address: Map<ContractAddress, Vec<u256>>,
         group_count: u256,
         group_usage_fee: u256,
         group_update_fee: u256,
@@ -216,6 +218,7 @@ pub mod AutoShare {
                 creator: get_caller_address(),
                 date: get_block_timestamp(),
                 group_address: get_caller_address(),
+                total_amount: 0,
             };
             self.groups.write(id, group.clone());
 
@@ -246,6 +249,7 @@ pub mod AutoShare {
                 .unwrap();
             self.group_addresses.write(id, contract_address_for_group);
             self.group_addresses_map.write(contract_address_for_group, id);
+            self.groups_created_by_address.entry(caller).push(id);
             let child_contract = IAutoshareChildDispatcher {
                 contract_address: contract_address_for_group,
             };
@@ -371,6 +375,19 @@ pub mod AutoShare {
             groups
         }
 
+        fn get_groups_created_by_address(
+            self: @ContractState, address: ContractAddress,
+        ) -> Array<Group> {
+            let mut groups: Array<Group> = ArrayTrait::new();
+            let groups_created_by_address_ptr = self.groups_created_by_address.entry(address);
+            for i in 0..groups_created_by_address_ptr.len() {
+                let group_id: u256 = i.try_into().unwrap();
+                let group = self.groups.entry(group_id).read();
+                groups.append(group);
+            }
+            groups
+        }
+
         fn get_group_member(self: @ContractState, group_id: u256) -> Array<GroupMember> {
             let members = self.group_members.entry(group_id);
             let mut group_members: Array<GroupMember> = ArrayTrait::new();
@@ -452,6 +469,7 @@ pub mod AutoShare {
             if usage_count == 0 {
                 group.usage_limit_reached = true;
             }
+            group.total_amount += amount;
             self.groups.write(group_id, group);
             // once paid, we decrement the planned usage count
             self.usage_count.write(group_id, usage_count);
