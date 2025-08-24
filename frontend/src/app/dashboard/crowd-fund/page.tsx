@@ -71,7 +71,6 @@ const CrowdFundPage = () => {
   };
 
   const handleFormSubmit = (formData: FormData) => {
-    console.log("Form submitted:", formData);
     // Handle form submission logic here
     // After successful submission, you might want to:
     // 1. Add the new funding to the list

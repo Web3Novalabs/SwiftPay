@@ -1,19 +1,19 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectGroup,
+//   SelectItem,
+//   SelectLabel,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import {
   useAccount,
-  useBalance,
+  // useBalance,
   useTransactionReceipt,
 } from "@starknet-react/core";
 import {
@@ -21,10 +21,9 @@ import {
   cairo,
   CallData,
   Contract,
-  FeeMode,
   PaymasterDetails,
 } from "starknet";
-import { myProvider, PAYMESH_ADDRESS } from "@/utils/contract";
+import { myProvider, ONE_STK, PAYMESH_ADDRESS, strkTokenAddress } from "@/utils/contract";
 import React from "react";
 import group1icon from "../../../../public/PlusCircle.svg";
 import Image from "next/image";
@@ -78,7 +77,7 @@ const CreateNewGroup = () => {
     0
   );
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // const [errors, setErrors] = useState<Record<string, string>>({});
   const [groupAddress, setGroupAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -87,8 +86,6 @@ const CreateNewGroup = () => {
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isCheckboxChecked, setIsCheckboxChecked] = useState(false);
   const [creationFee, setCreationFee] = useState<null | number>(null);
-  const strkTokenAddress =
-    "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
   const [resultHash, setResultHash] = useState("");
   const [hasProcessedTransaction, setHasProcessedTransaction] = useState(false);
@@ -129,7 +126,7 @@ const CreateNewGroup = () => {
     [""]
   );
 
-  const ONE_STK = 1000000000000000000;
+
   useEffect(() => {
     if (usageFee) {
       const fee = BigInt(usageFee);
@@ -225,24 +222,22 @@ const CreateNewGroup = () => {
     try {
       // const amount = parseFloat(formData.amount);
 
-      if (account != undefined) {
+      if (account != undefined && formData.usage) {
         const swiftpayCall = {
           contractAddress: PAYMESH_ADDRESS,
           entrypoint: "create_group",
           calldata: CallData.compile({
             name: byteArray.byteArrayFromString(formData.name),
             members: formData.members,
-            usage_count: cairo.uint256(1),
+            usage_count: cairo.uint256(+formData?.usage),
           }),
         };
-
         const approveCall = {
           contractAddress: strkTokenAddress,
           entrypoint: "approve",
           calldata: [
-            SWIFTPAY_CONTRACT_ADDRESS, // spender
-            "1000000000000000000", // amount (1 STRK in wei)
-            "0",
+            PAYMESH_ADDRESS, // spender
+            cairo.uint256(+formData?.usage * ONE_STK),
           ],
         };
 
@@ -271,7 +266,6 @@ const CreateNewGroup = () => {
         );
 
         console.log(result);
-
         setResultHash(result.transaction_hash);
         console.log(status);
       }
@@ -670,6 +664,8 @@ const CreateNewGroup = () => {
             type="number"
             value={formData?.usage ? formData.usage : ""}
             placeholder="Enter number of usage"
+            min={1}
+
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, usage: e.target.value }))
             }
@@ -797,7 +793,7 @@ const CreateNewGroup = () => {
         <button
           onClick={handleSubmit}
           disabled={
-            totalPercentage !== 100 || isSubmitting || !isCheckboxChecked
+            totalPercentage !== 100 || isSubmitting || !isCheckboxChecked || !formData.usage
           }
           className={`w-full sm:w-fit  bg-[#FFFFFF0D] border border-[#FFFFFF0D] text-[#E2E2E2] py-3 sm:py-4 px-6 sm:px-12 rounded-sm flex items-center justify-center gap-2 sm:gap-3 transition-colors ${
             totalPercentage !== 100 || isSubmitting || !isCheckboxChecked

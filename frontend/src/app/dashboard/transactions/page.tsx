@@ -8,9 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useContractFetch } from "@/hooks/useContractInteraction";
-import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
-import { epocTime } from "@/utils/contract";
+import {  useGetAllGroups, } from "@/hooks/useContractInteraction";
 import WalletConnect from "@/app/components/WalletConnect";
 import { useAccount } from "@starknet-react/core";
 
@@ -171,9 +169,8 @@ const TransactionsPage = () => {
     return true;
   });
 
-  const { readData: paid } = useContractFetch(PAYMESH_ABI, "get_all_groups", [
-    "",
-  ]);
+  const transaction = useGetAllGroups();
+
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
@@ -263,11 +260,11 @@ const TransactionsPage = () => {
                   </th>
                   {/* <th className="px-6 py-6 text-left text-xs font-medium text-[#8398AD] uppercase tracking-wider">
                     Status
-                  </th> */}
-                </tr>
+                  </th>*/}
+                </tr> 
               </thead>
               <tbody className="bg-[#FFFFFF0D] divide-y divide-[#FFFFFF0D]">
-                {currentTransactions.map((transaction, index) => (
+                {transaction && transaction.map((transaction, index) => (
                   <tr key={transaction.id} className="hover:bg-[#282e38]">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#E2E2E2]">
                       {startIndex + index + 1}
@@ -275,17 +272,17 @@ const TransactionsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2] font-mono">
                       {transaction.groupAddress}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#E2E2E2]">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#E2E2E2]">
                       {transaction.amount}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2]">
                       {transaction.date}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-6 py-4 whitespace-nowrap text-sm text-[#E2E2E2]">
-                        {transaction.status}
+                        {transaction.usage_limit_reached}
                       </span>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>

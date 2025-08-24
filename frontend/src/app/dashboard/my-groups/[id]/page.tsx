@@ -27,10 +27,15 @@ import {
 } from "@/components/ui/select";
 import { useBalance, useAccount } from "@starknet-react/core";
 import {
+  useContractFetch,
+  useGetGroupsUsage,
   useGroupAddressHasSharesIn,
   useGroupMember,
 } from "@/hooks/useContractInteraction";
 import WalletConnect from "@/app/components/WalletConnect";
+import { PAYMESH_ABI } from "@/abi/swiftswap_abi";
+import { myProvider, ONE_STK, PAYMESH_ADDRESS, strkTokenAddress } from "@/utils/contract";
+import { cairo, CallData, PaymasterDetails } from "starknet";
 
 const GroupDetailsPage = () => {
   const params = useParams();
@@ -40,8 +45,33 @@ const GroupDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const groupMember = useGroupMember(params.id as string);
-  const { address } = useAccount();
+  const { address,account } = useAccount();
+ 
 
+    const [usage, setUsage] = useState<undefined|string>(
+      undefined
+    );
+    const { readData:groupUsage } = useContractFetch(
+      PAYMESH_ABI,
+      "get_group_usage_paid_history",
+      // @ts-expect-error parmas can be undefined
+      [+params.id]
+    );
+    const { readData: usageCount } = useContractFetch(
+      PAYMESH_ABI,
+      "get_group_usage_count",
+      // @ts-expect-error  parmas can be undefined
+      [+params.id]
+    );
+  
+    useEffect(() => {
+      if (!groupUsage && !usageCount) return;
+      const m = +usageCount.toString();
+      const count = +groupUsage[0].toString();
+      const cal = count - m
+      const equate = cal ? `${count}/${cal}` : `${count}/${count}`;
+      setUsage(equate);
+    }, [usage,usageCount]);
   const { transaction } = useGroupAddressHasSharesIn(address || "");
 
   // Get the current group data based on the URL ID
@@ -113,6 +143,67 @@ const GroupDetailsPage = () => {
     router.push("/dashboard/my-groups");
   };
 
+  const handleSplit = async () => {
+    if (!balance?.formatted) {
+      return;
+    }
+
+    try {
+      // const amount = parseFloat(formData.amount);
+
+      if (account != undefined && balance?.formatted && currentGroup?.groupAddress) {
+        const swiftpayCall = {
+          contractAddress: PAYMESH_ADDRESS,
+          entrypoint: "pay",
+          calldata: CallData.compile({
+            group_address:currentGroup?.groupAddress,
+          }),
+        };
+
+        const approveCall = {
+          contractAddress: strkTokenAddress,
+          entrypoint: "approve",
+          calldata: [
+            PAYMESH_ADDRESS, // spender
+            cairo.uint256(ONE_STK),
+          ],
+        };
+
+        const multicallData = [approveCall, swiftpayCall];
+        // const result = await account.execute(multicallData)
+
+        const feeDetails: PaymasterDetails = {
+          feeMode: {
+            mode: "sponsored",
+          },
+        };
+
+        const feeEstimation = await account?.estimatePaymasterTransactionFee(
+          [...multicallData],
+          feeDetails
+        );
+
+        const result = await account?.executePaymasterTransaction(
+          [...multicallData],
+          feeDetails,
+          feeEstimation?.suggested_max_fee_in_gas_token
+        );
+
+        const status = await myProvider.waitForTransaction(
+          result?.transaction_hash as string
+        );
+
+        console.log(result);
+
+        // setResultHash(result.transaction_hash);
+        console.log(status);
+      }
+    } catch (error) {
+      console.error("Error creating group:", error);
+    } finally {
+     
+    }
+  };
   if (isLoading) {
     return (
       <div className="min-h-screen text-white p-6 flex items-center justify-center">
@@ -273,7 +364,7 @@ const GroupDetailsPage = () => {
               <h1 className="border-r pr-3 text-xl capitalize border-[#ffffff2b]">
                 {currentGroup?.name || "Loading..."}
               </h1>
-              <h3 className="text-[#379A83]">Subscription Usage: 1/2</h3>
+              <h3 className="text-[#379A83]">Subscription Usage: {usage}</h3>
             </div>
             <X className="w-5 h-5" />
           </div>
@@ -303,18 +394,30 @@ const GroupDetailsPage = () => {
               <button className="border-gradient-flow cursor-not-allowed text-white px-4 py-2 rounded-sm transition-colors">
                 Edit Group
               </button>
-              <button className="border-gradient-flow cursor-not-allowed text-white px-4 py-2 rounded-sm transition-colors">
-                Split Funds
-              </button>
-              <div className="border-gradient-flow space-x-2.5 text-white px-4 py-2 rounded-sm transition-colors">
-                <span className="text-[#8398AD]">Balance:</span>
-                <span className="text-[#E2E2E2]">
-                  {balance?.formatted} STRK
-                </span>
-              </div>
+              {/*  @ts-expect-error array need to be empty */}
+              {balance?.formatted != 0 && (
+                <>
+                  <button className="border-gradient-flow text-white px-4 py-2 rounded-sm transition-colors">
+                    Split Funds
+                  </button>
+                  <div className="border-gradient-flow space-x-2.5 text-white px-4 py-2 rounded-sm transition-colors">
+                    <span className="text-[#8398AD]">Balance:</span>
+                    <span className="text-[#E2E2E2]">
+                      {balance?.formatted} STRK
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
+          {currentGroup?.groupAddress && (
+            <div className="text-[#8398AD] flex items-center gap-1 p-4">
+              <h3 className=" border-r border-[#FFFFFF0D] pr-2 mr-2">Group address</h3>
+              <span className="text-[#E2E2E2] break-all text-sm">
+                {currentGroup?.groupAddress}
+              </span>
+            </div>
+          )}
           <div className="p-4">
             <h1>Members</h1>
           </div>
@@ -343,10 +446,9 @@ const GroupDetailsPage = () => {
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <span className="text-white text-sm font-mono">
-                        {member.addr.slice(0, 20)}...
-                        {member.addr.slice(-8)}
+                        {member.addr}
                       </span>
-                      <button
+                      {/* <button
                         onClick={() => copyToClipboard(member.addr)}
                         className="text-gray-400 hover:text-white transition-colors"
                       >
@@ -355,7 +457,7 @@ const GroupDetailsPage = () => {
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                   <td className="p-4 text-white text-sm">

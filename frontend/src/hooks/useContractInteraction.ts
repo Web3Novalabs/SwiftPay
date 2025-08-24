@@ -129,7 +129,8 @@ export function useGetAllGroups() {
   const { readData: groupList } = useContractFetch(
     PAYMESH_ABI,
     "get_all_groups",
-    [0]
+    // @ts-expect-error array need to be empty
+    []
   );
 
   useEffect(() => {
@@ -253,4 +254,34 @@ export function useGroupAddressHasSharesIn(address: string) {
   }, [groupList, address]); // ✅ Add address to dependencies
 
   return { transaction };
+}
+
+export function useGetGroupsUsage(id:number| undefined) {
+
+  const [transaction, setTransaction] = useState<undefined|string>(
+    undefined
+  );
+  const { readData: usage } = useContractFetch(
+    PAYMESH_ABI,
+    "get_group_usage_paid_history",
+    // @ts-expect-error parmas can be undefined
+    [id]
+  );
+  const { readData: usageCount } = useContractFetch(
+    PAYMESH_ABI,
+    "get_group_usage_count",
+    // @ts-expect-error  parmas can be undefined
+    [id]
+  );
+
+  useEffect(() => {
+    if (!usage && !usageCount) return;
+    const m = +usageCount.toString();
+    const count = +usage[0].toString()
+    const cal = count - m
+    const equate = cal ? `${count}/${cal}` : `${count}/${count}`;
+    setTransaction(equate);
+  }, [usage,usageCount]);
+
+  return transaction;
 }

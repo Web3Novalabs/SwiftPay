@@ -1,5 +1,4 @@
 import { Contract, Account, cairo, uint256, RpcProvider } from "starknet";
-import { PAYMESH_ABI } from "../abi/swiftswap_abi";
 // import { useBalance } from "@starknet-react/core";
 
 // // Contract configuration
@@ -11,7 +10,10 @@ export const PAYMESH_ADDRESS =
 // // export const CONTRACT_ADDRESS =
 // //   "0x0319c0feb56d2352681e58efc8aefa12efe0389b020efdcf7b822971a999f8c2";
 // // ;
+export  const strkTokenAddress =
+    "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
+export  const ONE_STK = 1000000000000000000;
 export const myProvider = new RpcProvider({
   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL,
 });

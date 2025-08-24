@@ -1,1 +1,0 @@
-ALTER TABLE "cursor_table" ADD CONSTRAINT "cursor_table_unique_key_unique" UNIQUE("unique_key");

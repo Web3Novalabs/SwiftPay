@@ -1,1 +1,0 @@
-DROP TABLE "group_addresses" CASCADE;

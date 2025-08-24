@@ -16,8 +16,6 @@ export default function UserBalance() {
   });
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>("ETH");
 
-  // Debug logging
-  console.log("UserBalance Debug:", { address, balance, isLoading, error });
 
   // Mock exchange rates (in real app, fetch from API)
   const exchangeRates = {
