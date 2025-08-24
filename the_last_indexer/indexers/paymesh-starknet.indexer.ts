@@ -23,7 +23,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     filter: {
       events: [
         {
-          address: "0x06e7eb4c36900a090acca8a71c9a2ee861cf0cb69be98a812f0a85b13a18a7d2",
+          address: "0x0539b10edc2e0e44523f4a06dee843022b42e37e358448fbaa940bd1f4431637",
           keys: [GROUP_CREATED_SELECTOR],
         },
         {
@@ -38,7 +38,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
       const { events: blockEvents, header } = block;
       if (!header) return;
 
-      logger.info(`Processing block: ${header.blockNumber}`);
+      logger.info(`Processing mainnet block: ${header.blockNumber}`);
       
       for (const event of blockEvents) {
         const eventKey = event.keys[0];

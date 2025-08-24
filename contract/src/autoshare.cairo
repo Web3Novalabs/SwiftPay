@@ -381,7 +381,7 @@ pub mod AutoShare {
             let mut groups: Array<Group> = ArrayTrait::new();
             let groups_created_by_address_ptr = self.groups_created_by_address.entry(address);
             for i in 0..groups_created_by_address_ptr.len() {
-                let group_id: u256 = i.try_into().unwrap();
+                let group_id: u256 = groups_created_by_address_ptr.at(i).read();
                 let group = self.groups.entry(group_id).read();
                 groups.append(group);
             }
