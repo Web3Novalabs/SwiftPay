@@ -61,12 +61,12 @@ const CreateNewGroup = () => {
       "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     members: [
       {
-        addr: "0x05a99911249cD55eF49B196E0f380AC086C6f3b2459adb8E9A33Ae8610e1C7Ed",
-        percentage: 30,
+        addr: "",
+        percentage: 0,
       },
       {
-        addr: "0x0305b969b430721cda31852d669cdc23b2e4cfc889ab0ed855f5c70ca2668e0a",
-        percentage: 50,
+        addr: "",
+        percentage: 0,
       },
     ],
   });
@@ -240,29 +240,30 @@ const CreateNewGroup = () => {
           entrypoint: "approve",
           calldata: [
             PAYMESH_ADDRESS, // spender
-            cairo.uint256(+formData?.usage * ONE_STK),
+            "1000000000000000000",
+            "0"
           ],
         };
 
-        const multicallData = [approveCall, swiftpayCall];
-        // const result = await account.execute(multicallData)
+        const multicallData = [approveCall,swiftpayCall];
+        const result = await account.execute(multicallData)
 
-        const feeDetails: PaymasterDetails = {
-          feeMode: {
-            mode: "sponsored",
-          },
-        };
+        // const feeDetails: PaymasterDetails = {
+        //   feeMode: {
+        //     mode: "sponsored",
+        //   },
+        // };
 
-        const feeEstimation = await account?.estimatePaymasterTransactionFee(
-          [...multicallData],
-          feeDetails
-        );
+        // const feeEstimation = await account?.estimatePaymasterTransactionFee(
+        //   [...multicallData],
+        //   feeDetails
+        // );
 
-        const result = await account?.executePaymasterTransaction(
-          [...multicallData],
-          feeDetails,
-          feeEstimation?.suggested_max_fee_in_gas_token
-        );
+        // const result = await account?.executePaymasterTransaction(
+        //   [...multicallData],
+        //   feeDetails,
+        //   feeEstimation?.suggested_max_fee_in_gas_token
+        // );
 
         const status = await myProvider.waitForTransaction(
           result?.transaction_hash as string

@@ -5,10 +5,10 @@ import {
   InjectedConnector,
   paymasterRpcProvider,
 } from "@starknet-react/core";
-import { sepolia, mainnet } from "@starknet-react/chains";
+import { mainnet } from "@starknet-react/chains";
 import { jsonRpcProvider } from "@starknet-react/core";
 
-const chains = [sepolia, mainnet];
+const chains = [mainnet];
 
 const connectors = [
   new InjectedConnector({ options: { id: "braavos" } }),
@@ -21,7 +21,7 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
       paymasterProvider={paymasterRpcProvider({
         rpc: () => {
           return {
-            nodeUrl: "https://sepolia.paymaster.avnu.fi",
+            nodeUrl: "https://mainnet.paymaster.avnu.fi",
             headers: {
               "x-paymaster-api-key":
                 process.env.NEXT_PUBLIC_PAYMASTER_API ?? "",
