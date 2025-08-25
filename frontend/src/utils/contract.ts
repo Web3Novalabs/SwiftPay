@@ -79,88 +79,24 @@ export function epocTime(time: string) {
   return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 }
 
-// // Contract interaction functions
-// export const createContractInstance = (account: Account): Contract => {
-//   return new Contract(PAYMESH_ABI, PAYMESH_ADDRESS, account);
-// };
+const normalizeAddress = (address: string): string => {
+  // Remove 0x prefix if present
+  if (address.length === 66) {
+    // console.log("man-2",address.slice(2))
+    return `${address.slice(2)}`
+  }
+  const cleanAddress = address.startsWith("0x") ? address.slice(2) : address;
 
-// export const createGroup = async (
-//   account: Account,
-//   groupData: CreateGroupData
-// ): Promise<{ transaction_hash: string }> => {
-//   try {
-//     const contract = createContractInstance(account);
+  // Pad with zeros to make it 64 characters (standard length)
+  const paddedAddress = cleanAddress.padStart(64, "0");
+  // console.log("man-",paddedAddress);
+  // Add back 0x prefix
+  return `${paddedAddress}`
+};
 
-//     // Format the data
-//     const formattedName = formatByteArray(groupData.name);
-//     const formattedAmount = formatU256(groupData.amount);
-//     const formattedMembers = formatGroupMembers(groupData.members);
+export const compareAddresses = (addr1: string, addr2: string): boolean => {
+  const normalized1 = normalizeAddress(addr1.toLowerCase());
+  const normalized2 = normalizeAddress(addr2.toLowerCase());
 
-//     console.log("Creating group with data:", {
-//       name: formattedName,
-//       amount: formattedAmount,
-//       members: formattedMembers,
-//       tokenAddress: groupData.tokenAddress,
-//     });
-
-//     // Call the contract
-//     const result = await contract.create_group(
-//       formattedName,
-//       formattedAmount,
-//       formattedMembers,
-//       groupData.tokenAddress
-//     );
-
-//     console.log("Transaction result:", result);
-//     return result;
-//   } catch (error) {
-//     console.error("Error creating group:", error);
-//     throw error;
-//   }
-// };
-
-// export const getGroup = async (
-//   account: Account,
-//   groupId: string
-// ): Promise<object> => {
-//   try {
-//     const contract = createContractInstance(account);
-//     const formattedGroupId = formatU256(groupId);
-
-//     const result = await contract.get_group(formattedGroupId);
-//     console.log("Group data:", result);
-//     return result;
-//   } catch (error) {
-//     console.error("Error getting group:", error);
-//     throw error;
-//   }
-// };
-
-// // Hook for contract interactions
-// export const useContract = (account: Account | null) => {
-//   const createGroupWithContract = async (groupData: CreateGroupData) => {
-//     if (!account) {
-//       throw new Error("No account connected");
-//     }
-//     return await createGroup(account, groupData);
-//   };
-
-//   const getGroupWithContract = async (groupId: string) => {
-//     if (!account) {
-//       throw new Error("No account connected");
-//     }
-//     return await getGroup(account, groupId);
-//   };
-
-//   return {
-//     createGroup: createGroupWithContract,
-//     getGroup: getGroupWithContract,
-//   };
-// };
-
-// Balance hook for contract interactions
-// export const { data: balance } = useBalance({
-//   token:
-//     "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d" as `0x${string}`,
-//   address: "0x0" as `0x${string}`,
-// });
+  return normalized1 === normalized2;
+};
