@@ -258,16 +258,18 @@ export function useGroupAddressHasSharesIn(address: string) {
   return { transaction };
 }
 
+export interface GroupData {
+  creator: string;
+  date: string;
+  name: string;
+  id: string;
+  usage_limit_reached: boolean;
+  groupAddress: string;
+}
+
 export function useAddressCreatedGroups() {
   const {address} = useAccount()
-  interface GroupData {
-    creator: string;
-    date: string;
-    name: string;
-    id: string;
-    usage_limit_reached: boolean;
-    groupAddress: string;
-  }
+
 
   interface ContractGroupData {
     creator: { toString: (radix: number) => string };
