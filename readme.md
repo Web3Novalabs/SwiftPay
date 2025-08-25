@@ -8,7 +8,7 @@ Paymesh is a decentralized payment platform that automates group payment distrib
 - Group Creation: Set up payment groups with multiple wallet addresses and assign specific percentage splits for each member
 - Child Contract Creation: We leverage Starknet technology to create individual child contracts for each group. Money can only be split exactly how the group creator set it up, ensuring complete security and transparency between everyone
 - Automated Group Distribution: Any payment sent to your group's child contract instantly splits according to preset percentages - no manual intervention needed
-- Group Management: Update group settings, extend usage limits, and manage subscription cycles as neede
+- Group Management: Update group settings, extend usage limits, and manage subscription cycles as needed
 - Tracking & Details: Monitor all transactions with complete transparency, view distribution history, and track group payment flows in real-time
 
 ## Pitch slide
@@ -16,4 +16,4 @@ Paymesh is a decentralized payment platform that automates group payment distrib
 
 
 ## NOTE
-If you're experiencing issues creating a group with your Ready (Argent) wallet, switch to a Braavos  wallet
+If you're experiencing issues creating a group with your Ready (Argent) wallet, switch to a Braavos  wallet.
